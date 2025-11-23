@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edu IA 360° | Transformación Educativa</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuración Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out forwards',
+                        'draw': 'draw 2s ease-in-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        draw: { '0%': { strokeDasharray: '1000', strokeDashoffset: '1000' }, '100%': { strokeDashoffset: '0' } },
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- React, ReactDOM, Babel, Lucide -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        /* Asegurar que el canvas de fondo no bloquee clics */
+        canvas { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-black text-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- COMPONENTE DE ICONOS ROBUSTO ---
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const iconRef = useRef(null);
+            
+            useEffect(() => {
+                const pascalName = name
+                    .split('-')
+                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join('');
+
+                if (iconRef.current && lucide && lucide.icons && lucide.icons[pascalName]) {
+                    lucide.createIcons({
+                        icons: { [name]: lucide.icons[pascalName] },
+                        nameAttr: 'data-lucide',
+                        attrs: { class: className, width: size, height: size }
+                    });
+                }
+            }, [name, className, size]);
+
+            return <i ref={iconRef} data-lucide={name} className={className}></i>;
+        };
+
+        const apiKey = ""; 
+
+        // --- DATOS ---
+        const NAV_LINKS = [
+            { name: 'Inicio', href: '#inicio' },
+            { name: 'Objetivo', href: '#objetivo' },
+            { name: 'Beneficios', href: '#beneficios' },
+            { name: 'Planes', href: '#planes' },
+            { name: 'Recursos', href: '#recursos' },
+            { name: 'Herramientas', href: '#herramientas' },
+            { name: 'Casos', href: '#testimonios' },
+        ];
+
+        const SITE_KNOWLEDGE = `
+        ERES EL ASISTENTE DE IA DE "EDU IA 360°".
+        TU OBJETIVO: Ayudar a docentes y directivos.
+        `;
+
+        // --- COMPONENTES VISUALES ---
+
+        // Componente Botón Volver al Inicio
+        const BackToTop = () => (
+            <div className="flex justify-end mt-8">
+                <a href="#inicio" className="group flex items-center gap-2 text-sm text-green-400 hover:text-white transition-all opacity-70 hover:opacity-100">
+                    <span className="group-hover:-translate-y-1 transition-transform duration-300"><Icon name="arrow-up" size={16} /></span> 
+                    Volver al inicio
+                </a>
+            </div>
+        );
+
+        const QuantumBackground = () => {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+                let particles = [];
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+                window.addEventListener('resize', resize);
+                resize();
+                
+                class Particle {
+                    constructor() {
+                        this.x = Math.random() * canvas.width;
+                        this.y = Math.random() * canvas.height;
+                        this.vx = (Math.random() - 0.5) * 0.5;
+                        this.vy = (Math.random() - 0.5) * 0.5;
+                        this.size = Math.random() * 2;
+                    }
+                    update() {
+                        this.x += this.vx;
+                        this.y += this.vy;
+                        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                    }
+                    draw() {
+                        ctx.fillStyle = 'rgba(74, 222, 128, 0.5)';
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                for (let i = 0; i < 60; i++) particles.push(new Particle());
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, '#000000');
+                    gradient.addColorStop(1, '#022c22');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach((p, index) => {
+                        p.update();
+                        p.draw();
+                        for (let j = index + 1; j < particles.length; j++) {
+                            const p2 = particles[j];
+                            const dx = p.x - p2.x;
+                            const dy = p.y - p2.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < 150) {
+                                ctx.strokeStyle = `rgba(74, 222, 128, ${0.1 - distance/1500})`;
+                                ctx.lineWidth = 0.5;
+                                ctx.beginPath();
+                                ctx.moveTo(p.x, p.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.stroke();
+                            }
+                        }
+                    });
+                    animationFrameId = requestAnimationFrame(animate);
+                };
+                animate();
+                return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
+            }, []);
+            return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full -z-10 pointer-events-none" />;
+        };
+
+        const Vortex = ({ children, className, containerClassName, particleCount = 200 }) => {
+            const canvasRef = useRef(null);
+            const containerRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const container = containerRef.current;
+                if (!canvas || !container) return;
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+                let particles = [];
+                const resize = () => { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; };
+                resize();
+                window.addEventListener('resize', resize);
+                const center = { x: canvas.width / 2, y: canvas.height / 2 };
+                class Particle {
+                    constructor() { this.reset(); }
+                    reset() {
+                        this.x = Math.random() * canvas.width;
+                        this.y = Math.random() * canvas.height;
+                        this.size = Math.random() * 2 + 0.5;
+                        this.speed = Math.random() * 2 + 0.5;
+                        this.angle = Math.random() * Math.PI * 2;
+                        this.radius = Math.random() * Math.max(canvas.width, canvas.height) * 0.8;
+                        this.hue = 120 + Math.random() * 60; 
+                    }
+                    update() {
+                        this.angle += this.speed * 0.005;
+                        this.radius -= this.speed * 0.5;
+                        this.x = center.x + Math.cos(this.angle) * this.radius;
+                        this.y = center.y + Math.sin(this.angle) * this.radius;
+                        if (this.radius < 5) { this.reset(); this.radius = Math.max(canvas.width, canvas.height) * 0.6; }
+                    }
+                    draw() {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${this.hue}, 80%, 50%, 0.6)`;
+                        ctx.fill();
+                    }
+                }
+                for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+                const animate = () => {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    center.x = canvas.width / 2;
+                    center.y = canvas.height / 2;
+                    particles.forEach(p => { p.update(); p.draw(); });
+                    animationFrameId = requestAnimationFrame(animate);
+                };
+                animate();
+                return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
+            }, [particleCount]);
+            return (
+                <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${containerClassName || ''}`}>
+                    <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+                    <div className={`relative z-10 ${className || ''}`}>{children}</div>
+                </div>
+            );
+        };
+
+        const Card3D = ({ children, className = "" }) => {
+            const cardRef = useRef(null);
+            const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg)");
+            const handleMouseMove = (e) => {
+                if (!cardRef.current) return;
+                const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+                const x = (e.clientX - left - width / 2) / 20; 
+                const y = (e.clientY - top - height / 2) / 20;
+                setTransform(`perspective(1000px) rotateX(${-y}deg) rotateY(${x}deg) scale(1.02)`);
+            };
+            return (
+                <div ref={cardRef} className={`transition-transform duration-200 ease-out ${className}`} onMouseMove={handleMouseMove} onMouseLeave={() => setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)")} style={{ transform }}>
+                    {children}
+                </div>
+            );
+        };
+
+        const StatsGraph = () => {
+            const data = [2, 4, 6, 5, 8, 12, 15, 20, 25, 28];
+            const width = 300; const height = 100;
+            const points = data.map((d, i) => {
+                const x = (i / (data.length - 1)) * width;
+                const y = height - (d / 30) * height;
+                return `${x},${y}`;
+            }).join(' ');
+            return (
+                <div className="w-full overflow-hidden">
+                    <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+                        <defs>
+                            <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#4ade80" />
+                                <stop offset="100%" stopColor="#0d9488" />
+                            </linearGradient>
+                            <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        </defs>
+                        <polyline points={points} fill="none" stroke="url(#line-gradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)" className="animate-draw" />
+                        {data.map((d, i) => {
+                            const x = (i / (data.length - 1)) * width;
+                            const y = height - (d / 30) * height;
+                            return <circle key={i} cx={x} cy={y} r="3" fill="#fff" className="opacity-0 animate-fade-in" style={{animationDelay: `${i * 0.1}s`, animationFillMode: 'forwards'}}/>
+                        })}
+                    </svg>
+                </div>
+            );
+        };
+
+        const LiveVoiceAgent = () => {
+            const [isListening, setIsListening] = useState(false);
+            const [transcript, setTranscript] = useState("");
+            const [response, setResponse] = useState("Hola, soy tu asistente pedagógico. Presiona el micrófono para preguntarme sobre estrategias de aula.");
+            const [loading, setLoading] = useState(false);
+            const handleMicClick = () => {
+                if (!window.webkitSpeechRecognition && !window.SpeechRecognition) { setResponse("Lo siento, tu navegador no soporta reconocimiento de voz."); return; }
+                if (isListening) { setIsListening(false); return; }
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-ES';
+                recognition.interimResults = false;
+                setIsListening(true); setTranscript("Escuchando...");
+                recognition.onresult = async (event) => {
+                    const text = event.results[0][0].transcript;
+                    setTranscript(`Tú: "${text}"`);
+                    setIsListening(false);
+                    await fetchGeminiResponse(text);
+                };
+                recognition.onerror = () => { setIsListening(false); setTranscript("Error al escuchar. Intenta de nuevo."); };
+                recognition.start();
+            };
+            const fetchGeminiResponse = async (query) => {
+                setLoading(true);
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: `Actúa como un experto pedagógico conciso. El usuario (docente) pregunta: "${query}". Responde en menos de 30 palabras.` }] }] })
+                    });
+                    const data = await res.json();
+                    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No pude procesar eso.";
+                    setResponse(reply); speak(reply);
+                } catch (error) { setResponse("Error conectando con la IA."); }
+                setLoading(false);
+            };
+            const speak = (text) => { window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'es-MX'; window.speechSynthesis.speak(utterance); };
+            return (
+                <div className="bg-gray-900/80 border border-green-500/30 rounded-xl p-6 backdrop-blur-sm">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-green-600 hover:bg-green-500 shadow-[0_0_20px_rgba(22,163,74,0.4)]'}`} onClick={handleMicClick}>
+                            {isListening ? <Icon name="mic-off" size={32} className="text-white" /> : <Icon name="mic" size={32} className="text-white" />}
+                        </div>
+                        <div className="min-h-[80px]">
+                            {loading ? <span className="text-green-400 animate-pulse">Pensando respuesta...</span> : <p className="text-gray-300 text-sm italic">{response}</p>}
+                        </div>
+                        {transcript && <p className="text-xs text-gray-500">{transcript}</p>}
+                    </div>
+                </div>
+            );
+        };
+
+        const ImageEditor = () => {
+            const [selectedImage, setSelectedImage] = useState(null);
+            const [analysis, setAnalysis] = useState("");
+            const [loading, setLoading] = useState(false);
+            const fileInputRef = useRef(null);
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) { const reader = new FileReader(); reader.onloadend = () => setSelectedImage(reader.result); reader.readAsDataURL(file); setAnalysis(""); }
+            };
+            const analyzeImage = async () => {
+                if (!selectedImage) return;
+                setLoading(true);
+                try {
+                    const base64Data = selectedImage.split(',')[1];
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: "Analiza este recurso educativo (imagen). ¿Qué tema parece ser y dame 2 ideas rápidas para enseñarlo mejor?" }, { inlineData: { mimeType: "image/png", data: base64Data } }] }] })
+                    });
+                    const data = await res.json();
+                    setAnalysis(data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo analizar.");
+                } catch (e) { setAnalysis("Error al analizar la imagen."); }
+                setLoading(false);
+            };
+            return (
+                <div className="bg-gray-900/80 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm flex flex-col h-full">
+                    {!selectedImage ? (
+                        <div onClick={() => fileInputRef.current.click()} className="flex-grow border-2 border-dashed border-gray-600 hover:border-blue-400 rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-colors">
+                            <Icon name="upload" className="text-gray-400 mb-2" size={32} />
+                            <p className="text-sm text-gray-400 text-center">Click para subir material didáctico</p>
+                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </div>
+                    ) : (
+                        <div className="flex flex-col h-full">
+                            <div className="relative h-48 mb-4 bg-black rounded-lg overflow-hidden">
+                                <img src={selectedImage} alt="Uploaded" className="w-full h-full object-contain" />
+                                <button onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full hover:bg-red-500/80 text-white"><Icon name="x" size={16}/></button>
+                            </div>
+                            {analysis ? (
+                                <div className="bg-blue-900/20 p-3 rounded text-sm text-gray-200 overflow-y-auto max-h-32 border-l-2 border-blue-500">{analysis}</div>
+                            ) : (
+                                <button onClick={analyzeImage} disabled={loading} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                                    {loading ? <Icon name="sparkles" className="animate-spin" size={18}/> : <Icon name="sparkles" size={18}/>}
+                                    {loading ? "Analizando..." : "Analizar con IA"}
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const DemoVideo = () => {
+            const driveViewLink = "https://drive.google.com/file/d/1noIhe9gQ2_SgMsv-EXpa6wwIgxJxgFtk/view?usp=sharing";
+            const driveEmbedLink = "https://drive.google.com/file/d/1noIhe9gQ2_SgMsv-EXpa6wwIgxJxgFtk/preview";
+
+            return (
+                <div className="w-full max-w-5xl mx-auto mb-20 relative group px-4">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-900 border border-white/10 shadow-2xl z-10">
+                        <iframe className="w-full h-full absolute inset-0" src={driveEmbedLink} title="Demo Edu IA 360" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style={{ border: 'none' }}></iframe>
+                    </div>
+                    <div className="text-center mt-6 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <p className="text-sm text-gray-400">¿El video no se reproduce automáticamente? Google Drive requiere cookies habilitadas.</p>
+                        <a href={driveViewLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-base font-bold text-white bg-green-600 hover:bg-green-500 px-8 py-3 rounded-full shadow-lg shadow-green-500/20 transition-all transform hover:scale-105 border border-green-400/50">
+                            <Icon name="play" size={18} fill="currentColor" /> Reproducir Video en Drive
+                        </a>
+                    </div>
+                </div>
+            );
+        };
+
+        const TestimonialCarousel = () => {
+            const testimonials = [
+                { initial: "BR", name: "Mtra. Brenda Rivera", role: "Educación Básica", quote: "Recuperé 7 horas semanales y mejoré mis estrategias didácticas.", color: "bg-green-500" },
+                { initial: "CG", name: "Mtra. Claudia González", role: "EBC Querétaro", quote: "Aplicación práctica en mis clases y proyectos personales.", color: "bg-blue-500" },
+                { initial: "AR", name: "Mtra. Anabel Rodríguez", role: "Director Académico", quote: "La sistematización nos permitió escalar la IA en toda la facultad.", color: "bg-purple-500" }
+            ];
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isPaused, setIsPaused] = useState(false);
+            useEffect(() => {
+                if (isPaused) return;
+                const interval = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % testimonials.length); }, 5000);
+                return () => clearInterval(interval);
+            }, [isPaused, testimonials.length]);
+            const prevSlide = () => { setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1)); };
+            const nextSlide = () => { setCurrentIndex((prev) => (prev + 1) % testimonials.length); };
+            return (
+                <div className="relative w-full max-w-4xl mx-auto" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
+                    <div className="overflow-hidden relative min-h-[250px] flex items-center justify-center">
+                        {testimonials.map((t, idx) => {
+                            let position = 'opacity-0 translate-x-full pointer-events-none absolute'; 
+                            if (idx === currentIndex) position = 'opacity-100 translate-x-0 z-10 relative';
+                            else if (idx === (currentIndex - 1 + testimonials.length) % testimonials.length) position = 'opacity-0 -translate-x-full absolute'; 
+                            return (
+                                <div key={idx} className={`transition-all duration-500 ease-in-out w-full md:w-3/4 lg:w-2/3 ${position}`}>
+                                    <div className="bg-gray-900/60 p-8 rounded-2xl border border-gray-700 backdrop-blur-sm shadow-2xl">
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className={`w-16 h-16 ${t.color} rounded-full flex items-center justify-center text-black font-bold text-xl mb-4 shadow-[0_0_15px_rgba(255,255,255,0.2)]`}>{t.initial}</div>
+                                            <p className="italic text-gray-200 text-lg mb-6 leading-relaxed">"{t.quote}"</p>
+                                            <div><p className="font-bold text-white text-lg">{t.name}</p><p className="text-sm text-green-400 font-mono">{t.role}</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <button onClick={prevSlide} className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-green-600 text-white p-3 rounded-full border border-white/10 backdrop-blur-md transition-all z-20 hover:scale-110" aria-label="Anterior"><Icon name="chevron-left" size={24} /></button>
+                    <button onClick={nextSlide} className="absolute right-0 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-green-600 text-white p-3 rounded-full border border-white/10 backdrop-blur-md transition-all z-20 hover:scale-110" aria-label="Siguiente"><Icon name="chevron-right" size={24} /></button>
+                    <div className="flex justify-center gap-3 mt-6">
+                        {testimonials.map((_, idx) => (
+                            <button key={idx} onClick={() => setCurrentIndex(idx)} className={`w-3 h-3 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-green-500 w-8' : 'bg-gray-600 hover:bg-gray-400'}`} aria-label={`Ir al testimonio ${idx + 1}`} />
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const ChatWidget = () => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [messages, setMessages] = useState([{ role: 'assistant', text: '¡Hola! Soy el asistente de Edu IA 360. ¿Tienes dudas sobre nuestros planes o recursos gratuitos?' }]);
+            const [input, setInput] = useState("");
+            const messagesEndRef = useRef(null);
+            const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            useEffect(scrollToBottom, [messages, isOpen]);
+            const handleSend = async () => {
+                if (!input.trim()) return;
+                const userMsg = input; setMessages(prev => [...prev, { role: 'user', text: userMsg }]); setInput("");
+                try {
+                    const prompt = `${SITE_KNOWLEDGE}\nHISTORIAL:\nUsuario: ${userMsg}\nAsistente (Responde en primera persona como parte del equipo, brevemente):`;
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await res.json();
+                    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, tuve un error de conexión. ¿Podrías contactarnos por WhatsApp?";
+                    setMessages(prev => [...prev, { role: 'assistant', text: reply }]);
+                } catch (e) { setMessages(prev => [...prev, { role: 'assistant', text: "Error de conexión. Por favor verifica tu internet." }]); }
+            };
+            return (
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+                    {isOpen && (
+                        <div className="mb-4 w-80 h-96 bg-gray-900 border border-green-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300">
+                            <div className="bg-gradient-to-r from-green-700 to-teal-700 p-4 flex justify-between items-center">
+                                <h3 className="text-white font-bold flex items-center gap-2"><Icon name="message-square" size={18}/> Soporte Edu IA</h3>
+                                <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white"><Icon name="x" size={18}/></button>
+                            </div>
+                            <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-black/40">
+                                {messages.map((m, i) => (
+                                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>{m.text}</div>
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+                            <div className="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
+                                <input className="flex-grow bg-gray-900 border border-gray-600 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500" placeholder="Escribe tu duda..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
+                                <button onClick={handleSend} className="bg-green-600 hover:bg-green-500 text-white p-2 rounded"><Icon name="send" size={18}/></button>
+                            </div>
+                        </div>
+                    )}
+                    <button onClick={() => setIsOpen(!isOpen)} className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-teal-600 shadow-lg shadow-green-500/40 flex items-center justify-center text-white hover:scale-110 transition-transform">
+                        {isOpen ? <Icon name="x" size={28} /> : <Icon name="message-square" size={28} />}
+                    </button>
+                </div>
+            );
+        };
+
+        // --- APP PRINCIPAL ---
+        const App = () => {
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
+            const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+            const closeMenu = () => setIsMobileMenuOpen(false);
+
+            return (
+                <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
+                    <QuantumBackground />
+                    <ChatWidget />
+                    
+                    {/* NAV */}
+                    <nav className="fixed top-0 w-full z-40 border-b border-white/5 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-20">
+                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+                                    <div className="relative w-10 h-10 flex-shrink-0">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-blue-600 rounded-full opacity-80 blur-[2px] animate-pulse"></div>
+                                        <div className="absolute inset-1 bg-black rounded-full flex items-center justify-center"><span className="text-lg">🌐</span></div>
+                                    </div>
+                                    <span className="text-xl font-bold tracking-tighter text-white">Edu IA <span className="text-green-400">360°</span></span>
+                                </div>
+                                <div className="hidden xl:block">
+                                    <div className="ml-10 flex items-baseline space-x-4">
+                                        {NAV_LINKS.map((link) => ( 
+                                            <a 
+                                                key={link.name} 
+                                                href={link.href} 
+                                                className="text-sm font-medium text-gray-200 hover:text-white hover:bg-green-500/10 hover:shadow-[0_0_10px_rgba(74,222,128,0.2)] px-4 py-2 rounded-full transition-all border border-transparent hover:border-green-500/20"
+                                            >
+                                                {link.name}
+                                            </a> 
+                                        ))}
+                                        <a href="#contacto" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white border border-green-500/30 px-6 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-green-500/20 hover:shadow-green-500/40 hover:scale-105">Contacto</a>
+                                    </div>
+                                </div>
+                                <div className="flex items-center xl:hidden">
+                                    <button onClick={toggleMenu} className="text-white p-2 hover:text-green-400 transition-colors rounded-md border border-white/10 hover:bg-white/5 ml-4">
+                                        {isMobileMenuOpen ? <Icon name="x" size={28} /> : <Icon name="menu" size={28} />}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {isMobileMenuOpen && (
+                            <div className="absolute top-20 right-0 w-full sm:w-80 bg-black/95 border-l border-b border-green-500/30 backdrop-blur-xl animate-in slide-in-from-top-5 fade-in-20 z-50 shadow-2xl h-[calc(100vh-5rem)] flex flex-col">
+                                <div className="px-6 pt-8 pb-8 space-y-4 flex flex-col flex-grow overflow-y-auto">
+                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Navegación</span>
+                                    {NAV_LINKS.map((link) => ( 
+                                        <a 
+                                            key={link.name} 
+                                            href={link.href} 
+                                            onClick={closeMenu} 
+                                            className="w-full block px-4 py-3 rounded-xl text-lg font-medium text-gray-200 hover:text-white hover:bg-green-500/10 border border-transparent hover:border-green-500/30 transition-all"
+                                        >
+                                            {link.name}
+                                        </a> 
+                                    ))}
+                                    <a href="#contacto" onClick={closeMenu} className="w-full block mt-auto px-4 py-4 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 text-center text-white font-bold shadow-lg shadow-green-500/20 hover:shadow-green-500/40 transition-all">Contacto</a>
+                                </div>
+                            </div>
+                        )}
+                    </nav>
+
+                    {/* HERO */}
+                    <section id="inicio" className="relative min-h-screen lg:h-screen overflow-hidden pt-24 pb-12 lg:py-0 flex items-center">
+                        <Vortex className="flex items-center w-full h-full px-0" containerClassName="bg-black/20" particleCount={300}>
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full flex items-center">
+                                <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
+                                    <div className="space-y-8 animate-in slide-in-from-left duration-700">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/60 border border-green-500/50 text-green-300 text-xs font-mono backdrop-blur-md">
+                                            <span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span> NUEVA GENERACIÓN EDUCATIVA
+                                        </div>
+                                        <h1 className="text-5xl md:text-6xl font-bold leading-tight text-white drop-shadow-lg">IA integral aplicada para <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 glow-text">docentes y escuelas</span></h1>
+                                        <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
+                                        <div className="flex flex-wrap gap-4 pt-2">
+                                            <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white rounded-lg font-semibold shadow-[0_0_20px_rgba(22,163,74,0.5)] transition-all hover:scale-105 flex items-center gap-2">Ver Propuesta <Icon name="chevron-right" size={20}/></a>
+                                            <a href="https://gemini.google.com/share/3a6f1db1ba2f" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 hover:border-green-400 hover:text-green-300 text-white rounded-lg font-semibold transition-all flex items-center gap-2 backdrop-blur-sm"><Icon name="sparkles" size={18} /> Diagnóstico IA</a>
+                                        </div>
+                                    </div>
+                                    <div className="relative h-[500px] perspective-1000 animate-in slide-in-from-right duration-1000 hidden lg:block">
+                                        <Card3D className="w-full h-full">
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-green-900/40 to-blue-900/40 rounded-2xl border border-white/10 backdrop-blur-md flex flex-col items-center justify-center text-center p-10 shadow-2xl">
+                                                <div className="w-40 h-40 bg-gradient-to-r from-green-500 to-blue-500 rounded-full blur-[80px] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-40 animate-pulse"></div>
+                                                <div className="relative z-10 font-mono text-6xl mb-4 animate-bounce">🚀</div>
+                                                <h2 className="relative z-10 text-3xl font-bold text-white mb-2">Resultados en 8 Semanas</h2>
+                                                <p className="relative z-10 text-gray-300 mb-8">Ahorro de 6-8 horas/semana</p>
+                                                <div className="w-full mt-4 relative z-10 opacity-90 bg-black/50 p-4 rounded-xl border border-white/10">
+                                                    <StatsGraph />
+                                                    <div className="flex justify-between text-xs text-gray-400 font-mono mt-2 px-1"><span>Semana 1</span><span className="text-green-400">Proyección Impacto</span><span>Semana 8</span></div>
+                                                </div>
+                                            </div>
+                                        </Card3D>
+                                    </div>
+                                </div>
+                            </div>
+                        </Vortex>
+                    </section>
+
+                    {/* OBJETIVO */}
+                    <section id="objetivo" className="py-24 bg-gradient-to-b from-black to-gray-900/50">
+                        <div className="max-w-4xl mx-auto px-4 text-center">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestro <span className="text-green-400">Objetivo</span></h2>
+                            <p className="text-xl text-gray-300 leading-relaxed">Implementación guiada de <span className="text-white font-semibold border-b-2 border-green-500/50">IA generativa y agéntica práctica</span>, alineada al currículo y planeación institucional, para ahorrar tiempo, elevar la participación y documentar el impacto con métricas claras con enfoque ético, humano, sostenible y estratégico.</p>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* BENEFICIOS */}
+                    <section id="beneficios" className="py-20 border-t border-white/5">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Beneficios <span className="text-green-400">Clave</span></h2>
+                            <div className="grid md:grid-cols-3 gap-8">
+                                {[
+                                    { title: "Ahorro de tiempo", desc: "Ahorra 6-8 horas/semana en planeación, rúbricas y retroalimentación.", icon: "hourglass", color: "green" },
+                                    { title: "Mayor participación", desc: "Incrementa la participación con prompts activos y evaluación formativa.", icon: "user-check", color: "blue" },
+                                    { title: "Integración sistematizada", desc: "Plantillas listas y acompañamiento por cohortes.", icon: "settings", color: "purple" },
+                                    { title: "Evidencias de impacto", desc: "Tiempo ahorrado, participación y resultados de aprendizaje.", icon: "bar-chart-2", color: "yellow" },
+                                    { title: "Ética y privacidad", desc: "Lineamientos claros y uso responsable de datos.", icon: "shield", color: "red" },
+                                    { title: "Acompañamiento 100%", desc: "Personalizado y con indicadores clave de desempeño.", icon: "heart-handshake", color: "teal" }
+                                ].map((item, idx) => (
+                                    <Card3D key={idx} className="h-full">
+                                        <div className={`bg-gray-900/50 backdrop-blur-md p-8 rounded-xl h-full border-t-4 border-${item.color}-500 hover:bg-gray-800 transition-all border border-white/5 hover:border-white/20 shadow-lg`}>
+                                            <div className="text-4xl mb-4"><Icon name={item.icon} size={40}/></div>
+                                            <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                                            <p className="text-gray-400">{item.desc}</p>
+                                        </div>
+                                    </Card3D>
+                                ))}
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* METODOLOGÍA */}
+                    <section id="metodologia" className="py-24 bg-black relative overflow-hidden">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">Cómo funciona <span className="text-blue-400">(3 pasos)</span></h2>
+                            <div className="relative grid md:grid-cols-3 gap-12">
+                                <div className="absolute top-12 left-0 w-full h-1 bg-gradient-to-r from-green-900 via-blue-900 to-green-900 hidden md:block -z-10 opacity-50"></div>
+                                {[
+                                    { num: "01", title: "Diagnóstico estratégico", desc: "Para mapear el currículo y definir objetivos." },
+                                    { num: "02", title: "Co-diseño aplicado", desc: "Prompts, plantillas y rúbricas por materia." },
+                                    { num: "03", title: "Acompañamiento", desc: "Sesiones prácticas y optimización mensual." }
+                                ].map((step, idx) => (
+                                    <div key={idx} className="relative group text-center">
+                                        <div className="w-24 h-24 mx-auto bg-black border-2 border-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-green-400 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(74,222,128,0.3)] relative z-10">{step.num}</div>
+                                        <div className="p-4 rounded-lg group-hover:bg-white/5 transition-colors"><h3 className="text-xl font-bold text-white mb-2">{step.title}</h3><p className="text-gray-400">{step.desc}</p></div>
+                                    </div>
+                                ))}
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* PLANES */}
+                    <section id="planes" className="py-20 border-t border-white/5 bg-gradient-to-b from-black to-green-900/5">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-12">
+                                <h2 className="text-4xl font-bold text-white mb-4">Paquetes y <span className="text-green-400">Rutas</span></h2>
+                                <p className="text-gray-400 mb-6">Soluciones adaptadas a cada necesidad educativa.</p>
+                                <div className="inline-block max-w-2xl mx-auto bg-green-900/10 border border-green-500/20 rounded-lg px-6 py-3 backdrop-blur-sm">
+                                    <p className="text-sm text-green-200/90 italic flex gap-2 items-start justify-center"><span className="mt-1"><Icon name="sparkles" size={14} className="text-green-400"/></span> Nota: Las propuestas son flexibles y se pueden generar otras en función de las necesidades y/o requerimientos de los docentes y escuelas.</p>
+                                </div>
+                            </div>
+                            <div className="grid lg:grid-cols-3 gap-8">
+                                {/* Docentes */}
+                                <Card3D className="h-full">
+                                    <div className="bg-gray-900/60 p-8 rounded-2xl h-full flex flex-col border border-green-900 hover:border-green-500 transition-all hover:shadow-xl hover:shadow-green-900/20">
+                                        <div className="mb-4"><span className="px-3 py-1 rounded-full bg-green-900/50 text-green-300 text-xs font-bold border border-green-500/20">INDIVIDUAL</span></div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">Docentes</h3>
+                                        <p className="text-gray-400 text-sm mb-6">"Quiero ahorrar tiempo y activar mi clase"</p>
+                                        <ul className="space-y-4 mb-8 flex-grow">
+                                            {["Clase muestra gratis", "Taller práctico", "Plantillas + Soporte 30 días"].map((feat, i) => (<li key={i} className="flex items-start gap-3 text-sm text-gray-300"><div className="mt-1 bg-green-500/20 p-1 rounded-full"><Icon name="check" size={12} className="text-green-400"/></div>{feat}</li>))}
+                                        </ul>
+                                        <a href={getWALink("Hola, soy docente y me interesa el paquete individual.")} target="_blank" rel="noreferrer" className="w-full py-3 text-center block rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-all border border-white/5">Empieza ahora</a>
+                                    </div>
+                                </Card3D>
+                                {/* Directivos */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/80 p-8 rounded-2xl h-full flex flex-col border-2 border-green-500 relative overflow-hidden transform lg:-translate-y-4 shadow-2xl shadow-green-900/50">
+                                        <div className="absolute top-0 right-0 bg-green-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg">RECOMENDADO</div>
+                                        <div className="mb-4"><span className="px-3 py-1 rounded-full bg-blue-900/50 text-blue-300 text-xs font-bold border border-blue-500/20">INSTITUCIONAL</span></div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">Directivos</h3>
+                                        <p className="text-gray-400 text-sm mb-6">"Necesito plan de despliegue con métricas"</p>
+                                        <ul className="space-y-4 mb-8 flex-grow">
+                                            {["Diagnóstico gratis", "Plan de 8 semanas", "Tablero estratégico de control"].map((feat, i) => (<li key={i} className="flex items-start gap-3 text-sm text-gray-300"><div className="mt-1 bg-green-500/20 p-1 rounded-full"><Icon name="check" size={12} className="text-green-400"/></div>{feat}</li>))}
+                                            <li className="flex items-start gap-3 text-sm text-yellow-400 italic"><div className="mt-1"><Icon name="sparkles" size={14}/></div>Si no hay entregables en 14 días, ampliamos acompañamiento sin costo.</li>
+                                        </ul>
+                                        <a href={getWALink("Hola, soy directivo y necesito una propuesta institucional.")} target="_blank" rel="noreferrer" className="w-full py-3 text-center block rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold shadow-[0_0_20px_rgba(22,163,74,0.4)] transition-all scale-105">Solicita Propuesta</a>
+                                    </div>
+                                </Card3D>
+                                {/* IES */}
+                                <Card3D className="h-full">
+                                    <div className="bg-gray-900/60 p-8 rounded-2xl h-full flex flex-col border border-green-900 hover:border-green-500 transition-all hover:shadow-xl hover:shadow-green-900/20">
+                                        <div className="mb-4"><span className="px-3 py-1 rounded-full bg-purple-900/50 text-purple-300 text-xs font-bold border border-purple-500/20">SUPERIOR</span></div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">IES / Posgrados</h3>
+                                        <p className="text-gray-400 text-sm mb-6">"Piloto por cohortes con evaluación"</p>
+                                        <ul className="space-y-4 mb-8 flex-grow">
+                                            {["Diagnóstico gratis", "Plan de 8 semanas", "Métricas + Reporte ejecutivo"].map((feat, i) => (<li key={i} className="flex items-start gap-3 text-sm text-gray-300"><div className="mt-1 bg-green-500/20 p-1 rounded-full"><Icon name="check" size={12} className="text-green-400"/></div>{feat}</li>))}
+                                        </ul>
+                                        <a href={getWALink("Hola, represento a una IES/Posgrado y me interesa un piloto.")} target="_blank" rel="noreferrer" className="w-full py-3 text-center block rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-all border border-white/5">Agenda una sesión</a>
+                                    </div>
+                                </Card3D>
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* RECURSOS */}
+                    <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-12"><h2 className="text-4xl font-bold text-white mb-4">Recursos de <span className="text-green-400">Valor</span></h2><p className="text-gray-400">Descarga nuestras herramientas gratuitas.</p></div>
+                            <div className="grid md:grid-cols-3 gap-6">
+                                {[
+                                    { icon: "file-text", title: "Checklist de integración curricular en 30 minutos", text: "Guía rápida para integrar curricularmente la IA.", action: "Descargar gratis", url: "https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing" },
+                                    { icon: "book-open", title: "Syllabus editable con IA aplicada", text: "Plantilla lista para usar con IA aplicada a tu materia.", action: "Obtener plantilla", url: "https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing" },
+                                    { icon: "compass", title: "Guía para directivos: despliegue de IA en 8 semanas", text: "Estrategia paso a paso para el despliegue de IA.", action: "Recibe la guía", url: "https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing" }
+                                ].map((res, idx) => (
+                                    <div key={idx} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 transition-all group hover:bg-gray-800/80">
+                                        <div className="text-3xl mb-4"><Icon name={res.icon} size={32}/></div>
+                                        <h3 className="text-xl font-bold text-white mb-2 leading-snug">{res.title}</h3>
+                                        <p className="text-sm text-gray-400 mb-4 h-10">{res.text}</p>
+                                        <a href={res.url} target="_blank" rel="noreferrer" className="text-green-400 font-bold flex items-center gap-2 group-hover:translate-x-2 transition-transform">{res.action} <Icon name="external-link" size={14} /></a>
+                                    </div>
+                                ))}
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* HERRAMIENTAS LIVE DEMO */}
+                    <section id="herramientas" className="py-20 bg-black/30 border-y border-white/5 relative">
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2><p className="text-gray-400">Prueba una demostración de nuestros asistentes avanzados.</p></div>
+                            <div className="grid lg:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-green-500/20 rounded-xl text-green-400 text-2xl border border-green-500/30"><Icon name="mic" /></div><div><h3 className="text-2xl font-semibold text-white">Asesoría por Voz</h3><p className="text-gray-500 text-sm">Habla para practicar situaciones de aula.</p></div></div>
+                                    <LiveVoiceAgent />
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 text-2xl border border-blue-500/30"><Icon name="image" /></div><div><h3 className="text-2xl font-semibold text-white">Análisis de Recursos</h3><p className="text-gray-500 text-sm">Sube una imagen educativa para recibir ideas.</p></div></div>
+                                    <ImageEditor />
+                                </div>
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* TESTIMONIOS */}
+                    <section className="py-20" id="testimonios">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <h2 className="text-3xl font-bold text-center mb-4 text-white">Casos y <span className="text-green-400">Resultados</span></h2>
+                            <div className="text-center mb-12">
+                                <a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline underline-offset-4 transition-colors font-medium bg-green-900/20 px-4 py-2 rounded-full hover:bg-green-900/30">
+                                    <Icon name="play" size={16} fill="currentColor"/> Ver Casos Prácticos (Demo 5 min)
+                                </a>
+                            </div>
+                            <DemoVideo />
+                            <TestimonialCarousel />
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* CTA VORTEX */}
+                    <section className="relative w-full h-[500px] overflow-hidden">
+                        <Vortex className="flex items-center flex-col justify-center px-4 md:px-10 py-4 w-full h-full" containerClassName="bg-black">
+                            <h2 className="text-white text-3xl md:text-5xl font-bold text-center leading-tight">¿Listo para transformar tu escuela?</h2>
+                            <p className="text-gray-300 text-base md:text-xl max-w-xl mt-6 text-center">Únete a la revolución educativa hoy mismo. Implementa IA ética y práctica sin complicaciones técnicas.</p>
+                            <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
+                                <a href={getWALink("Hola, quiero unirme a la revolución educativa de Edu IA 360")} target="_blank" rel="noreferrer" className="px-8 py-3 bg-green-600 hover:bg-green-500 transition duration-200 rounded-full text-white font-bold shadow-[0_0_20px_rgba(22,163,74,0.4)] hover:scale-105">Comenzar ahora</a>
+                                <a href="#planes" className="px-8 py-3 text-white border border-white/20 rounded-full hover:bg-white/10 transition-colors">Ver planes</a>
+                            </div>
+                        </Vortex>
+                    </section>
+
+                    {/* FOOTER */}
+                    <footer id="contacto" className="bg-black py-12 border-t border-white/10 text-sm">
+                        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8 mb-8 text-gray-400">
+                            <div className="col-span-2">
+                                <span className="text-2xl font-bold tracking-tighter text-white block mb-4">Edu IA <span className="text-green-400">360°</span></span>
+                                <p className="max-w-xs">Transformando la educación a través de inteligencia artificial ética y práctica.</p>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4">Enlaces</h4>
+                                <ul className="space-y-2">{NAV_LINKS.slice(0, 5).map((link) => ( <li key={link.name}><a href={link.href} className="hover:text-green-400">{link.name}</a></li> ))}</ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4">Contacto</h4>
+                                <ul className="space-y-2">
+                                    <li>consultora@eduia360.com</li>
+                                    <li><a href={getWALink("Hola, tengo una duda sobre Edu IA 360")} target="_blank" rel="noreferrer" className="hover:text-green-400 transition-colors flex items-center gap-2"><Icon name="phone" size={14}/> +52 461 182 4875</a></li>
+                                    <li>Querétaro, MX</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="text-center text-gray-600 pt-8 border-t border-white/5">© 2025 Edu IA 360°. Todos los derechos reservados.</div>
+                    </footer>
+                    
+                    <div className="flex justify-end pr-8 pb-8"><a href="#inicio" className="group flex items-center gap-2 text-sm text-green-400 hover:text-white transition-all opacity-70 hover:opacity-100"><span className="group-hover:-translate-y-1 transition-transform duration-300"><Icon name="arrow-up" size={16} /></span> Volver al inicio</a></div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
