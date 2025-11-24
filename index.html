@@ -68,7 +68,9 @@
         };
 
         /**
-         * API Key configurada para habilitar herramientas de IA.
+         * API Key configurada.
+         * Si ves errores de "Quota exceeded", es normal en el plan gratuito si haces muchas pruebas seguidas.
+         * El código ahora maneja ese error avisándote.
          */
         const apiKey = "AIzaSyAzD9OqLEpwPhx2LBf0nEmBJJo49cEwQ4Y"; 
 
@@ -342,8 +344,9 @@
                         })
                     });
                     
+                    // Manejo específico para error de cuota (429)
                     if (res.status === 429) {
-                        throw new Error("Límite de uso gratuito alcanzado. Por favor espera un minuto.");
+                        throw new Error("⏳ Cuota excedida. Por favor, espera 1 minuto antes de intentar de nuevo.");
                     }
 
                     if (!res.ok) {
@@ -357,7 +360,7 @@
                     speak(reply);
                 } catch (error) { 
                     console.error("Error detallado:", error);
-                    setResponse(`Error: ${error.message}`); 
+                    setResponse(error.message); // Muestra el mensaje amigable de error
                 }
                 setLoading(false);
             };
@@ -431,7 +434,7 @@
                     });
 
                     if (res.status === 429) {
-                        throw new Error("Límite de uso gratuito alcanzado. Por favor espera un minuto.");
+                        throw new Error("⏳ Cuota excedida. Por favor, espera 1 minuto.");
                     }
 
                     if (!res.ok) {
@@ -567,7 +570,8 @@
                     });
                     
                     if (res.status === 429) {
-                        throw new Error("Límite de uso gratuito alcanzado. Por favor espera un minuto.");
+                        setMessages(prev => [...prev, { role: 'assistant', text: "⏳ Sistema ocupado (Límite de cuota). Por favor espera 1 minuto." }]);
+                        return;
                     }
 
                     if (!res.ok) {
