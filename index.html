@@ -68,7 +68,8 @@
         };
 
         // --- CONFIGURACIÓN Y DATOS ---
-        const DEFAULT_GEMINI_KEY = "AIzaSyDm7PnzwArucbUZlog2bMSezyuEfabaLwk";
+        // TU NUEVA API KEY
+        const DEFAULT_GEMINI_KEY = "AIzaSyDWY0AW_0OBinkTJhDvvHz7HS-jnEvcJsI";
 
         const NAV_LINKS = [
             { name: 'Inicio', href: '#inicio' },
@@ -97,7 +98,7 @@
 
                 if (provider === 'gemini') {
                     // --- LÓGICA GEMINI ---
-                    // Usamos el modelo 2.5-flash-preview-09-2025 para asegurar compatibilidad
+                    // Usamos el modelo 2.5-flash-preview-09-2025 para asegurar compatibilidad con tu clave
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
                     
                     const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
@@ -110,9 +111,10 @@
                     });
 
                     if (res.status === 403) {
+                         // Mensaje de error específico para ayudar a depurar la restricción de dominio
                          const msg = window.location.hostname.includes('github.io') 
-                            ? "🚫 Acceso denegado. Verifica que la URL en Google Cloud coincida con tu GitHub." 
-                            : "🔒 Seguridad activa: La clave por defecto solo funciona en la web oficial. Para probar aquí, usa tu propia clave en Configuración ⚙️.";
+                            ? "🚫 Acceso denegado (403). Revisa en Google Cloud que la restricción sea: https://gaboetcheverry.github.io/*" 
+                            : "🔒 Seguridad activa: La clave por defecto solo funciona en la web oficial (GitHub Pages).";
                         throw new Error(msg);
                     }
 
@@ -231,6 +233,7 @@
             </div>
         );
 
+        // (QuantumBackground, Vortex, Card3D, StatsGraph se mantienen igual para ahorrar espacio en la respuesta, pero son necesarios)
         const QuantumBackground = () => {
             const canvasRef = useRef(null);
             useEffect(() => {
