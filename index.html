@@ -55,7 +55,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- COMPONENTE DE ICONOS ---
+        // --- COMPONENTE DE ICONOS ROBUSTO ---
         const Icon = ({ name, size = 24, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
@@ -67,8 +67,7 @@
             return <i ref={iconRef} data-lucide={name} className={className}></i>;
         };
 
-        // --- DATOS ---
-        // Definimos la constante con el nombre correcto que espera la App
+        // --- CONFIGURACIÓN Y DATOS ---
         const DEFAULT_GEMINI_KEY = "AIzaSyDm7PnzwArucbUZlog2bMSezyuEfabaLwk";
 
         const NAV_LINKS = [
@@ -81,7 +80,7 @@
             { name: 'Casos', href: '#testimonios' },
         ];
 
-        const SITE_KNOWLEDGE = `ERES EL ASISTENTE DE IA DE "EDU IA 360°". TU OBJETIVO: Ayudar a docentes y directivos.`;
+        const SITE_KNOWLEDGE = `ERES EL ASISTENTE DE IA DE "EDU IA 360°". TU OBJETIVO: Ayudar a docentes y directivos a entender los servicios de consultoría, formación e implementación de IA en colegios.`;
 
         // --- LÓGICA CENTRAL DE API (MULTI-PROVEEDOR) ---
         const callUnifiedAPI = async (payload, config) => {
@@ -98,7 +97,8 @@
 
                 if (provider === 'gemini') {
                     // --- LÓGICA GEMINI ---
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                    // Usamos el modelo 2.5-flash-preview-09-2025 para asegurar compatibilidad
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
                     
                     const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
                     if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
@@ -135,7 +135,7 @@
                             'Authorization': `Bearer ${apiKey}`
                         },
                         body: JSON.stringify({
-                            model: "gpt-3.5-turbo", // O gpt-4o-mini
+                            model: "gpt-4o-mini", 
                             messages: [
                                 { role: "system", content: sysPrompt },
                                 { role: "user", content: userMsg }
@@ -154,7 +154,7 @@
                 return responseText;
 
             } catch (error) {
-                console.warn("API Info:", error.message); // Warn instead of Error to keep console cleaner
+                console.warn("API Info:", error.message); 
                 throw error;
             }
         };
@@ -165,7 +165,6 @@
             const [localConfig, setLocalConfig] = useState(config);
             const [statusMsg, setStatusMsg] = useState("");
 
-            // Efecto para asegurar que localConfig se actualice si config cambia externamente
             useEffect(() => {
                 setLocalConfig(config);
             }, [config]);
@@ -176,7 +175,7 @@
                     await callUnifiedAPI({ user: "Hola", system: "Responde 'OK' si recibes esto." }, localConfig);
                     setStatusMsg("✅ ¡Conexión Exitosa!");
                     setTimeout(() => setStatusMsg(""), 2000);
-                    onSave(localConfig); // Guardar automáticamente si funciona
+                    onSave(localConfig); 
                 } catch (e) {
                     setStatusMsg(`❌ Error: ${e.message}`);
                 }
@@ -232,7 +231,6 @@
             </div>
         );
 
-        // (QuantumBackground, Vortex, Card3D, StatsGraph se mantienen igual para ahorrar espacio en la respuesta, pero son necesarios)
         const QuantumBackground = () => {
             const canvasRef = useRef(null);
             useEffect(() => {
@@ -567,19 +565,22 @@
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            // Cargar config inicial con la clave por defecto
             const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
+            
             const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
             const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
             const closeMenu = () => setIsMobileMenuOpen(false);
 
-            // Cargar config
+            // Efecto para cargar la configuración guardada en localStorage si existe
             useEffect(() => {
                 const saved = localStorage.getItem('eduia360_config');
                 if (saved) {
-                    setApiConfig(JSON.parse(saved));
-                } else {
-                    // Cargar por defecto si no hay nada guardado
-                    setApiConfig({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
+                    try {
+                        setApiConfig(JSON.parse(saved));
+                    } catch (e) {
+                        console.error("Error parsing saved config", e);
+                    }
                 }
             }, []);
 
@@ -588,7 +589,7 @@
                 localStorage.setItem('eduia360_config', JSON.stringify(newConfig));
             };
 
-            // Verificación de estado
+            // Verificación de estado visual (si hay API Key, mostramos verde)
             const isConnected = !!apiConfig.apiKey;
             const statusColor = isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
 
@@ -658,7 +659,7 @@
                                         <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
                                         <div className="flex flex-wrap gap-4 pt-2">
                                             <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
-                                            <a href="https://gemini.google.com/share/3a6f1db1ba2f" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
+                                            <button onClick={() => setIsSettingsOpen(true)} className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</button>
                                         </div>
                                     </div>
                                     <div className="hidden lg:block h-[500px] perspective-1000">
