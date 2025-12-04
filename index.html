@@ -104,8 +104,9 @@
             const imagePart = payload.image; 
 
             try {
-                // Gemini 1.5 Flash (Estable)
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                // Usamos el modelo preview que es más compatible con claves nuevas de AI Studio
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
                 const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
                 if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
                 
