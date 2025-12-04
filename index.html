@@ -16,10 +16,13 @@
                     animation: {
                         'fade-in': 'fadeIn 0.5s ease-in-out forwards',
                         'draw': 'draw 2s ease-in-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
                         draw: { '0%': { strokeDasharray: '1000', strokeDashoffset: '1000' }, '100%': { strokeDashoffset: '0' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
                     },
                 }
             }
@@ -35,13 +38,15 @@
     <style>
         html { scroll-behavior: smooth; }
         .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
-        /* Asegurar que el canvas de fondo no bloquee clics */
         canvas { pointer-events: none; }
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        /* Estilos para el indicador de estado */
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .status-connected { background-color: #4ade80; box-shadow: 0 0 8px #4ade80; }
+        .status-disconnected { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        /* Scrollbar personalizada chat */
+        .chat-scroll::-webkit-scrollbar { width: 4px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
     </style>
 </head>
 <body class="bg-black text-gray-100">
@@ -50,7 +55,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- COMPONENTE DE ICONOS ROBUSTO ---
+        // --- COMPONENTE DE ICONOS ---
         const Icon = ({ name, size = 24, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
@@ -62,12 +67,14 @@
             return <i ref={iconRef} data-lucide={name} className={className}></i>;
         };
 
-        // --- CONFIGURACIÓN ---
-        const DEFAULT_GEMINI_KEY = "AIzaSyDWY0AW_0OBinkTJhDvvHz7HS-jnEvcJsI"; 
+        // --- CONFIGURACIÓN POR DEFECTO ---
+        // Clave por defecto para facilitar el inicio (sujeta a límites)
+        const DEFAULT_GEMINI_KEY = "AIzaSyDm7PnzwArucbUZlog2bMSezyuEfabaLwk";
 
+        // --- DATOS ---
         const NAV_LINKS = [
             { name: 'Inicio', href: '#inicio' },
-            { name: 'Nuestra propuesta de valor', href: '#objetivo' },
+            { name: 'Propuesta', href: '#objetivo' },
             { name: 'Beneficios', href: '#beneficios' },
             { name: 'Planes', href: '#planes' },
             { name: 'Recursos', href: '#recursos' },
@@ -77,92 +84,132 @@
 
         const SITE_KNOWLEDGE = `ERES EL ASISTENTE DE IA DE "EDU IA 360°". TU OBJETIVO: Ayudar a docentes y directivos.`;
 
-        // --- GESTIÓN DE AJUSTES (HOOK) SIMPLIFICADO ---
-        const useAISettings = () => {
-            // Eliminamos provider, solo gestionamos la key de Gemini
-            const [geminiKey, setGeminiKey] = useState(DEFAULT_GEMINI_KEY);
-
-            useEffect(() => {
-                const savedKey = localStorage.getItem('eduia360_gemini_key');
-                if (savedKey) {
-                    setGeminiKey(savedKey);
-                }
-            }, []);
-
-            const updateSettings = (newKey) => {
-                setGeminiKey(newKey);
-                localStorage.setItem('eduia360_gemini_key', newKey);
-            };
-            return { geminiKey, updateSettings };
-        };
-
-        // --- LLAMADA API (SOLO GEMINI) ---
-        const callAIAPI = async (payload, apiKey) => {
-            if (!apiKey) throw new Error(`⚠️ Falta API Key de Gemini. Configúrala en el engranaje.`);
+        // --- LÓGICA CENTRAL DE API (MULTI-PROVEEDOR) ---
+        const callUnifiedAPI = async (payload, config) => {
+            const { provider, apiKey } = config;
             
+            if (!apiKey) throw new Error("⚠️ No hay API Key configurada. Ve al engranaje ⚙️.");
+
             const sysPrompt = payload.system || "Eres un asistente útil.";
             const userMsg = payload.user || "";
             const imagePart = payload.image; 
 
             try {
-                // Gemini 2.5 Flash Preview (Más compatible con claves AI Studio nuevas)
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
-                if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
-                
-                const body = JSON.stringify({ contents: [{ parts }] });
-                const headers = { 'Content-Type': 'application/json' };
+                let responseText = "";
 
-                const res = await fetch(url, { method: 'POST', headers, body });
+                if (provider === 'gemini') {
+                    // --- LÓGICA GEMINI ---
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                    
+                    const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
+                    if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
 
-                if (res.status === 403) {
-                     const msg = window.location.hostname.includes('github.io') 
-                        ? "🚫 Acceso denegado. Verifica restricciones de dominio." 
-                        : "🔒 Seguridad activa: La clave por defecto solo funciona en GitHub. Usa tu propia clave en el engranaje para probar aquí.";
-                    throw new Error(msg);
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts }] })
+                    });
+
+                    if (res.status === 403) throw new Error("🚫 Clave inválida o restringida.");
+                    if (res.status === 429) throw new Error("⏳ Límite de cuota excedido. Espera 1 min.");
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error?.message || `Error ${res.status}`);
+                    }
+                    const data = await res.json();
+                    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta.";
+
+                } else if (provider === 'openai') {
+                    // --- LÓGICA OPENAI ---
+                    if (imagePart) throw new Error("El análisis de imagen en esta demo web solo está optimizado para Gemini.");
+
+                    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-3.5-turbo", // O gpt-4o-mini
+                            messages: [
+                                { role: "system", content: sysPrompt },
+                                { role: "user", content: userMsg }
+                            ]
+                        })
+                    });
+
+                    if (res.status === 401) throw new Error("🚫 Clave OpenAI inválida.");
+                    if (res.status === 429) throw new Error("⏳ Cuota OpenAI excedida.");
+                    if (!res.ok) throw new Error(`Error OpenAI ${res.status}`);
+
+                    const data = await res.json();
+                    responseText = data.choices?.[0]?.message?.content || "Sin respuesta.";
                 }
-                if (res.status === 429) throw new Error("⏳ Límite de cuota excedido. Espera 1 min.");
-                
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.error?.message || `Error ${res.status}`);
-                }
 
-                const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta.";
+                return responseText;
 
             } catch (error) {
-                if (!error.message.includes("Seguridad activa")) console.warn("AI API Error:", error.message);
+                console.error("API Error:", error);
                 throw error;
             }
         };
 
-        // --- MODAL DE CONFIGURACIÓN (SIMPLIFICADO) ---
-        const SettingsModal = ({ isOpen, onClose, currentKey, onSave }) => {
+        // --- MODAL DE CONFIGURACIÓN ---
+        const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
             if (!isOpen) return null;
-            const [localKey, setLocalKey] = useState(currentKey);
+            const [localConfig, setLocalConfig] = useState(config);
+            const [statusMsg, setStatusMsg] = useState("");
 
-            const handleSave = () => { onSave(localKey); onClose(); };
+            // Efecto para asegurar que localConfig se actualice si config cambia externamente
+            useEffect(() => {
+                setLocalConfig(config);
+            }, [config]);
+
+            const testConnection = async () => {
+                setStatusMsg("Probando conexión...");
+                try {
+                    await callUnifiedAPI({ user: "Hola", system: "Responde 'OK' si recibes esto." }, localConfig);
+                    setStatusMsg("✅ ¡Conexión Exitosa!");
+                    setTimeout(() => setStatusMsg(""), 2000);
+                    onSave(localConfig); // Guardar automáticamente si funciona
+                } catch (e) {
+                    setStatusMsg(`❌ Error: ${e.message}`);
+                }
+            };
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
                         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><Icon name="x"/></button>
-                        <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Icon name="settings" className="text-green-400"/> Configuración</h3>
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Icon name="settings" className="text-green-400"/> Configuración IA</h3>
                         
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm text-gray-400 mb-2 font-bold">API Key de Google Gemini</label>
-                                <input type="password" value={localKey} onChange={(e) => setLocalKey(e.target.value)} placeholder="Pega tu clave de Gemini aquí..." className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none text-sm"/>
-                                <p className="text-xs text-gray-500 mt-2 italic">
-                                    La clave por defecto tiene límites de uso gratuitos. Puedes usar la tuya propia si lo deseas.
-                                </p>
+                                <label className="block text-sm text-gray-400 mb-2 font-bold">Proveedor de IA</label>
+                                <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+                                    <button onClick={() => setLocalConfig({...localConfig, provider: 'gemini'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-colors ${localConfig.provider === 'gemini' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'}`}>Gemini (Google)</button>
+                                    <button onClick={() => setLocalConfig({...localConfig, provider: 'openai'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-colors ${localConfig.provider === 'openai' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>OpenAI (GPT)</button>
+                                </div>
                             </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2 font-bold">API Key ({localConfig.provider.toUpperCase()})</label>
+                                <input 
+                                    type="password" 
+                                    value={localConfig.apiKey} 
+                                    onChange={(e) => setLocalConfig({...localConfig, apiKey: e.target.value})} 
+                                    placeholder={`Pega tu clave de ${localConfig.provider} aquí...`} 
+                                    className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none text-sm"
+                                />
+                                <p className="text-xs text-gray-500 mt-2">Tu clave se guarda solo en tu navegador.</p>
+                            </div>
+
+                            {statusMsg && <div className={`text-sm p-2 rounded ${statusMsg.includes('Exitos') ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>{statusMsg}</div>}
                         </div>
 
                         <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={onClose} className="px-4 py-2 text-gray-300 hover:text-white font-medium">Cancelar</button>
-                            <button onClick={handleSave} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/20">Guardar</button>
+                            <button onClick={testConnection} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium text-sm">Probar Conexión</button>
+                            <button onClick={() => { onSave(localConfig); onClose(); }} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/20">Guardar</button>
                         </div>
                     </div>
                 </div>
@@ -180,6 +227,7 @@
             </div>
         );
 
+        // (QuantumBackground, Vortex, Card3D, StatsGraph se mantienen igual para ahorrar espacio en la respuesta, pero son necesarios)
         const QuantumBackground = () => {
             const canvasRef = useRef(null);
             useEffect(() => {
@@ -269,13 +317,14 @@
             );
         };
 
-        const LiveVoiceAgent = ({ apiKey }) => {
+        const LiveVoiceAgent = ({ config }) => {
             const [isListening, setIsListening] = useState(false);
             const [transcript, setTranscript] = useState("");
             const [response, setResponse] = useState("Hola, soy tu asistente pedagógico. Presiona el micrófono para hablar.");
             const [loading, setLoading] = useState(false);
             
             const handleMicClick = () => {
+                if (!config.apiKey) { setResponse("⚠️ Configura tu API Key primero en el icono de engranaje."); return; }
                 if (!window.webkitSpeechRecognition && !window.SpeechRecognition) { setResponse("Navegador no soporta voz."); return; }
                 if (isListening) { setIsListening(false); return; }
 
@@ -295,7 +344,7 @@
                     
                     setLoading(true);
                     try {
-                        const reply = await callAIAPI({ user: text, system: "Actúa como experto pedagógico conciso. Responde < 30 palabras." }, apiKey);
+                        const reply = await callUnifiedAPI({ user: text, system: "Actúa como experto pedagógico conciso. Responde < 30 palabras." }, config);
                         setResponse(reply);
                         const u = new SpeechSynthesisUtterance(reply); u.lang = 'es-MX'; window.speechSynthesis.speak(u);
                     } catch (e) { setResponse(e.message); }
@@ -309,12 +358,19 @@
 
             return (
                 <div className="bg-gray-900/80 border border-green-500/30 rounded-xl p-6 backdrop-blur-sm">
+                    {/* VISUAL AVATAR */}
+                    <div className="flex justify-center mb-6 animate-float">
+                         <div className="w-20 h-20 rounded-full bg-green-900/40 flex items-center justify-center border-2 border-green-500/40 shadow-[0_0_25px_rgba(74,222,128,0.3)]">
+                            <Icon name="bot" size={40} className="text-green-400" />
+                         </div>
+                    </div>
+
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
-                        <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-green-600 hover:bg-green-500 shadow-[0_0_20px_rgba(22,163,74,0.4)]'}`} onClick={handleMicClick}>
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 animate-pulse shadow-[0_0_30px_rgba(239,68,68,0.6)]' : 'bg-green-600 hover:bg-green-500 shadow-[0_0_20px_rgba(22,163,74,0.4)]'}`} onClick={handleMicClick}>
                             {isListening ? <Icon name="mic-off" size={32} className="text-white" /> : <Icon name="mic" size={32} className="text-white" />}
                         </div>
-                        <div className="min-h-[80px]">
-                            {loading ? <span className="text-green-400 animate-pulse">Pensando...</span> : <p className="text-gray-300 text-sm italic">{response}</p>}
+                        <div className="min-h-[60px]">
+                            {loading ? <span className="text-green-400 animate-pulse">Pensando ({config.provider})...</span> : <p className="text-gray-300 text-sm italic">{response}</p>}
                         </div>
                         {transcript && <p className="text-xs text-gray-500">{transcript}</p>}
                     </div>
@@ -322,7 +378,7 @@
             );
         };
 
-        const ImageEditor = ({ apiKey }) => {
+        const ImageEditor = ({ config }) => {
             const [selectedImage, setSelectedImage] = useState(null);
             const [analysis, setAnalysis] = useState("");
             const [loading, setLoading] = useState(false);
@@ -338,14 +394,15 @@
 
             const analyzeImage = async () => {
                 if (!selectedImage) return;
+                if (!config.apiKey) { setAnalysis("⚠️ Configura tu API Key en el engranaje."); return; }
                 setLoading(true);
                 try {
                     const mimeType = selectedImage.split(';')[0].split(':')[1];
                     const base64Data = selectedImage.split(',')[1];
-                    const reply = await callAIAPI({ 
+                    const reply = await callUnifiedAPI({ 
                         user: "Analiza este recurso educativo y da 2 tips breves.", 
                         image: { mimeType, data: base64Data }
-                    }, apiKey);
+                    }, config);
                     setAnalysis(reply);
                 } catch (e) { setAnalysis(e.message); }
                 setLoading(false);
@@ -353,6 +410,13 @@
 
             return (
                 <div className="bg-gray-900/80 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm flex flex-col h-full">
+                     {/* VISUAL SCANNER ICON */}
+                    <div className="flex justify-center mb-4">
+                         <div className="w-14 h-14 rounded-full bg-blue-900/30 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                            <Icon name="scan-eye" size={28} className="text-blue-400" />
+                         </div>
+                    </div>
+
                     {!selectedImage ? (
                         <div onClick={() => fileInputRef.current.click()} className="flex-grow border-2 border-dashed border-gray-600 hover:border-blue-400 rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-colors">
                             <Icon name="upload" className="text-gray-400 mb-2" size={32} />
@@ -373,7 +437,7 @@
             );
         };
 
-        const ChatWidget = ({ apiKey }) => {
+        const ChatWidget = ({ config }) => {
             const [isOpen, setIsOpen] = useState(false);
             const [messages, setMessages] = useState([{ role: 'assistant', text: '¡Hola! Soy el asistente de Edu IA 360. ¿En qué te ayudo?' }]);
             const [input, setInput] = useState("");
@@ -384,7 +448,7 @@
                 if (!input.trim()) return;
                 const userMsg = input; setMessages(p => [...p, { role: 'user', text: userMsg }]); setInput("");
                 try {
-                    const reply = await callAIAPI({ user: userMsg, system: SITE_KNOWLEDGE }, apiKey);
+                    const reply = await callUnifiedAPI({ user: userMsg, system: SITE_KNOWLEDGE }, config);
                     setMessages(p => [...p, { role: 'assistant', text: reply }]);
                 } catch (e) { setMessages(p => [...p, { role: 'assistant', text: e.message }]); }
             };
@@ -397,12 +461,22 @@
                                 <h3 className="text-white font-bold flex items-center gap-2"><Icon name="bot" size={18}/> Soporte Edu IA</h3>
                                 <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white"><Icon name="x" size={18}/></button>
                             </div>
-                            <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-black/40">
-                                {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>{m.text}</div></div>))}
+                            <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-black/40 chat-scroll">
+                                {messages.map((m, i) => (
+                                    <div key={i} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        {m.role === 'assistant' && (
+                                            <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0"><Icon name="bot" size={14} className="text-white" /></div>
+                                        )}
+                                        <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>{m.text}</div>
+                                        {m.role === 'user' && (
+                                            <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0"><Icon name="user" size={14} className="text-white" /></div>
+                                        )}
+                                    </div>
+                                ))}
                                 <div ref={messagesEndRef} />
                             </div>
                             <div className="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
-                                <input className="flex-grow bg-gray-900 border border-gray-600 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500" placeholder="Escribe..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
+                                <input className="flex-grow bg-gray-900 border border-gray-600 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500" placeholder="Escribe tu duda..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
                                 <button onClick={handleSend} className="bg-green-600 hover:bg-green-500 text-white p-2 rounded"><Icon name="send" size={18}/></button>
                             </div>
                         </div>
@@ -438,6 +512,7 @@
             const testimonials = [
                 { initial: "WB", name: "Lic. Wendy Barroso", role: "Asoc. Mexicana Éxito PYME", quote: "Su curso de IA ha sido una experiencia enriquecedora. Gracias por compartir conocimientos de manera tan didáctica y accesible.", color: "bg-green-600" },
                 { initial: "CG", name: "Mtra. Carol G.", role: "Educación Básica", quote: "Ahora puedo enfocarme más en la enseñanza y menos en la preparación. La IA me ayudó a crear recursos en tiempo récord.", color: "bg-blue-600" },
+                { initial: "EC", name: "Doctorante Esmeralda Cofradía", role: "Profesionista", quote: "Me encanta la clase de Edu IA 360. Combina teoría, práctica y herramientas de suma utilidad para las actividades de mi profesión.", color: "bg-pink-600" },
                 { initial: "AR", name: "Mtra. Anabel Rodríguez", role: "Director Académico", quote: "Incorporamos la IA en la curricula del nivel de Maestría en nuestro Centro educativo...", color: "bg-purple-600" },
                 { initial: "AB", name: "Mtro. Antonio Betancourt", role: "UPN", quote: "Agradecemos su participación como facilitador del taller 'Uso ético y estratégico de la IA en la investigación' en el Foro Académico 2025.", color: "bg-orange-600" },
                 { initial: "BR", name: "Mtra. Brenda Rivera", role: "Educación Básica", quote: "Recuperé 7 horas semanales y mejoré mis estrategias didácticas.", color: "bg-teal-600" },
@@ -487,21 +562,40 @@
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-            const { geminiKey, updateSettings } = useAISettings();
-            
+            const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: '' });
             const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
             const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
             const closeMenu = () => setIsMobileMenuOpen(false);
 
+            // Cargar config
+            useEffect(() => {
+                const saved = localStorage.getItem('eduia360_config');
+                if (saved) {
+                    setApiConfig(JSON.parse(saved));
+                } else {
+                    // Cargar por defecto si no hay nada guardado
+                    setApiConfig({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
+                }
+            }, []);
+
+            const handleSaveSettings = (newConfig) => {
+                setApiConfig(newConfig);
+                localStorage.setItem('eduia360_config', JSON.stringify(newConfig));
+            };
+
+            // Verificación de estado
+            const isConnected = !!apiConfig.apiKey;
+            const statusColor = isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+
             return (
                 <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
                     <QuantumBackground />
-                    <ChatWidget apiKey={geminiKey} />
+                    <ChatWidget config={apiConfig} />
                     <SettingsModal 
                         isOpen={isSettingsOpen} 
                         onClose={() => setIsSettingsOpen(false)} 
-                        currentKey={geminiKey} 
-                        onSave={updateSettings} 
+                        config={apiConfig}
+                        onSave={handleSaveSettings} 
                     />
                     
                     {/* NAV */}
@@ -513,15 +607,30 @@
                                     <span className="text-xl font-bold tracking-tighter text-white">Edu IA <span className="text-green-400">360°</span></span>
                                 </div>
                                 <div className="hidden xl:flex items-center">
-                                    <div className="flex items-baseline space-x-4">
+                                    <div className="flex items-baseline space-x-4 items-center">
                                         {NAV_LINKS.map((link) => ( <a key={link.name} href={link.href} className="text-sm font-medium text-gray-200 hover:text-white hover:bg-green-500/10 px-4 py-2 rounded-full transition-all">{link.name}</a> ))}
-                                        <a href="#contacto" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white border border-green-500/30 px-6 py-2 rounded-full text-sm font-bold transition-all hover:scale-105">Contacto</a>
-                                        <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-green-400 transition-colors"><Icon name="settings"/></button>
+                                        
+                                        {/* Botón Configuración IA */}
+                                        <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-all border border-gray-700 ml-2 group">
+                                            <div className={`h-2 w-2 rounded-full ${statusColor}`}></div>
+                                            <Icon name="settings" size={16} className="group-hover:rotate-90 transition-transform"/>
+                                            <span className="text-xs font-bold">Configurar IA</span>
+                                        </button>
+
+                                        <a href="#contacto" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white border border-green-500/30 px-6 py-2 rounded-full text-sm font-bold transition-all hover:scale-105 ml-2">Contacto</a>
                                     </div>
                                 </div>
-                                <div className="xl:hidden flex items-center gap-2">
-                                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-green-400"><Icon name="settings"/></button>
-                                    <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-white p-2 hover:text-green-400">{isMobileMenuOpen ? <Icon name="x" size={28}/> : <Icon name="menu" size={28}/>}</button>
+                                <div className="xl:hidden flex items-center gap-3">
+                                     <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-300 hover:text-white bg-gray-800/80 rounded-lg border border-gray-700 transition-colors relative">
+                                        <Icon name="settings" size={20}/>
+                                        <span className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${statusColor}`}></span>
+                                     </button>
+                                    <button 
+                                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                                        className="text-white p-2.5 rounded-lg bg-gradient-to-r from-green-600 to-teal-600 border border-green-400/30 shadow-[0_0_15px_rgba(22,163,74,0.4)] active:scale-95 transition-all"
+                                    >
+                                        {isMobileMenuOpen ? <Icon name="x" size={28}/> : <Icon name="menu" size={28}/>}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -544,7 +653,7 @@
                                         <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
                                         <div className="flex flex-wrap gap-4 pt-2">
                                             <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
-                                            <a href="https://gemini.google.com/share/3a6f1db1ba2f" target="_blank" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
+                                            <a href="https://gemini.google.com/share/3a6f1db1ba2f" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
                                         </div>
                                     </div>
                                     <div className="hidden lg:block h-[500px] perspective-1000">
@@ -559,28 +668,222 @@
                     <section id="objetivo" className="py-24 bg-gradient-to-b from-black to-gray-900/50">
                         <div className="max-w-4xl mx-auto px-4 text-center">
                             <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestra <span className="text-green-400">Propuesta de Valor</span></h2>
+                            
                             <div className="bg-gray-900/40 p-8 rounded-2xl border border-green-500/20 shadow-2xl backdrop-blur-sm">
                                 <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-8">
                                     “En <span className="font-bold text-white">EduIA 360</span> ayudamos a que tu colegio en <span className="text-green-400">Querétaro y Corregidora</span> no sólo use IA, sino que la convierta en una <span className="font-bold text-white">ventaja competitiva real</span>. Implementamos proyectos de IA en el aula que se transforman en historias y evidencias para tu <span className="text-green-400">marketing y admisiones</span>, mientras cada docente trabaja con su <span className="font-bold text-white">gemelo pedagógico</span> y la dirección con un <span className="font-bold text-white">gemelo institucional</span> para tomar mejores decisiones sobre innovación, matrícula y carga académica.”
                                 </p>
+                                
                                 <a href={getWALink("Hola, me interesa convertir la IA en una ventaja competitiva para mi colegio.")} target="_blank" className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white rounded-full font-bold text-lg shadow-[0_0_20px_rgba(22,163,74,0.4)] hover:shadow-[0_0_30px_rgba(22,163,74,0.6)] hover:scale-105 transition-all transform">
                                     Quiero potenciar mi escuela <Icon name="arrow-right" size={20}/>
                                 </a>
                             </div>
+
                             <BackToTop />
                         </div>
                     </section>
 
                     {/* BENEFICIOS */}
-                    <section id="beneficios" className="py-20 border-t border-white/5"><div className="max-w-7xl mx-auto px-4"><h2 className="text-3xl font-bold text-center mb-12">Beneficios <span className="text-green-400">Clave</span></h2><div className="grid md:grid-cols-3 gap-8">{[{t:"Ahorro de tiempo",d:"6-8 horas/semana menos.",i:"hourglass",c:"green"},{t:"Participación",d:"Prompts activos y evaluación.",i:"user-check",c:"blue"},{t:"Sistematización",d:"Plantillas listas.",i:"settings",c:"purple"},{t:"Evidencias",d:"Métricas claras.",i:"bar-chart-2",c:"yellow"},{t:"Ética",d:"Uso responsable.",i:"shield",c:"red"},{t:"Acompañamiento",d:"100% personalizado.",i:"heart-handshake",c:"teal"}].map((x,i)=><Card3D key={i} className="h-full"><div className={`bg-gray-900/50 p-8 rounded-xl h-full border-t-4 border-${x.c}-500 border border-white/5`}><div className="text-4xl mb-4"><Icon name={x.i} size={40}/></div><h3 className="text-xl font-bold mb-2">{x.t}</h3><p className="text-gray-400">{x.d}</p></div></Card3D>)}</div><BackToTop/></div></section>
+                    <section id="beneficios" className="py-20 border-t border-white/5">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Beneficios <span className="text-green-400">Clave</span></h2>
+                            <div className="grid md:grid-cols-3 gap-8">
+                                {[
+                                    { title: "Ahorro de tiempo", desc: "Ahorra 6-8 horas/semana en planeación, rúbricas y retroalimentación.", icon: "hourglass", color: "green" },
+                                    { title: "Mayor participación", desc: "Incrementa la participación con prompts activos y evaluación formativa.", icon: "user-check", color: "blue" },
+                                    { title: "Integración sistematizada", desc: "Plantillas listas y acompañamiento por cohortes.", icon: "settings", color: "purple" },
+                                    { title: "Evidencias de impacto", desc: "Tiempo ahorrado, participación y resultados de aprendizaje.", icon: "bar-chart-2", color: "yellow" },
+                                    { title: "Ética y privacidad", desc: "Lineamientos claros y uso responsable de datos.", icon: "shield", color: "red" },
+                                    { title: "Acompañamiento 100%", desc: "Personalizado y con indicadores clave de desempeño.", icon: "heart-handshake", color: "teal" }
+                                ].map((item, idx) => (
+                                    <Card3D key={idx} className="h-full">
+                                        <div className={`bg-gray-900/50 backdrop-blur-md p-8 rounded-xl h-full border-t-4 border-${item.color}-500 hover:bg-gray-800 transition-all border border-white/5 hover:border-white/20 shadow-lg`}>
+                                            <div className="text-4xl mb-4"><Icon name={item.icon} size={40}/></div>
+                                            <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                                            <p className="text-gray-400">{item.desc}</p>
+                                        </div>
+                                    </Card3D>
+                                ))}
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
 
-                    <section id="metodologia" className="py-24 bg-black overflow-hidden"><div className="max-w-7xl mx-auto px-4 relative"><h2 className="text-3xl font-bold text-center mb-16">Cómo funciona <span className="text-blue-400">(3 pasos)</span></h2><div className="grid md:grid-cols-3 gap-12 relative"><div className="absolute top-12 w-full h-1 bg-gradient-to-r from-green-900 to-green-900 hidden md:block opacity-50"></div>{[{n:"01",t:"Diagnóstico",d:"Mapeo curricular."},{n:"02",t:"Co-diseño",d:"Prompts y plantillas."},{n:"03",t:"Acompañamiento",d:"Optimización mensual."}].map((s,i)=><div key={i} className="relative text-center group"><div className="w-24 h-24 mx-auto bg-black border-2 border-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-green-400 mb-6 relative z-10">{s.n}</div><h3 className="text-xl font-bold mb-2">{s.t}</h3><p className="text-gray-400">{s.d}</p></div>)}</div><BackToTop/></div></section>
+                    {/* METODOLOGÍA */}
+                    <section id="metodologia" className="py-24 bg-black relative overflow-hidden">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">Cómo funciona <span className="text-blue-400">(3 pasos)</span></h2>
+                            <div className="relative grid md:grid-cols-3 gap-12">
+                                <div className="absolute top-12 left-0 w-full h-1 bg-gradient-to-r from-green-900 via-blue-900 to-green-900 hidden md:block -z-10 opacity-50"></div>
+                                {[
+                                    { num: "01", title: "Diagnóstico estratégico", desc: "Para mapear el currículo y definir objetivos." },
+                                    { num: "02", title: "Co-diseño aplicado", desc: "Prompts, plantillas y rúbricas por materia." },
+                                    { num: "03", title: "Acompañamiento", desc: "Sesiones prácticas y optimización mensual." }
+                                ].map((step, idx) => (
+                                    <div key={idx} className="relative group text-center">
+                                        <div className="w-24 h-24 mx-auto bg-black border-2 border-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-green-400 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(74,222,128,0.3)] relative z-10">{step.num}</div>
+                                        <div className="p-4 rounded-lg group-hover:bg-white/5 transition-colors"><h3 className="text-xl font-bold text-white mb-2">{step.title}</h3><p className="text-gray-400">{step.desc}</p></div>
+                                    </div>
+                                ))}
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
 
-                    <section id="planes" className="py-24 border-t border-white/5"><div className="max-w-7xl mx-auto px-4"><div className="text-center mb-16"><h2 className="text-4xl font-bold text-white mb-4">Soluciones por <span className="text-green-400">Perfil</span></h2><div className="inline-block bg-green-900/20 border border-green-500/30 rounded-lg px-6 py-3"><p className="text-sm text-green-200 flex gap-2 items-center"><Icon name="sparkles" size={14}/> Nota: Propuestas flexibles.</p></div></div><div className="grid md:grid-cols-2 gap-8"><Card3D className="h-full"><div className="bg-black/60 p-8 rounded-2xl h-full border border-yellow-500/30 flex flex-col"><div className="mb-6 flex items-center gap-3"><span className="text-yellow-400 text-sm font-bold uppercase">Directores Generales</span></div><h3 className="text-2xl font-bold mb-3">Ventaja Competitiva</h3><p className="text-gray-400 text-sm mb-6">Diferénciate con proyectos y evidencias.</p><a href={getWALink("Hola, soy Director.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-yellow-600/80 to-yellow-500/80 text-white font-bold">Agenda diagnóstico</a></div></Card3D><Card3D className="h-full"><div className="bg-black/60 p-8 rounded-2xl h-full border border-blue-500/30 flex flex-col"><div className="mb-6 flex items-center gap-3"><span className="text-blue-400 text-sm font-bold uppercase">Académicos</span></div><h3 className="text-2xl font-bold mb-3">IA en el Currículo</h3><p className="text-gray-400 text-sm mb-6">Eleva la calidad docente.</p><a href={getWALink("Hola, soy Académico.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-blue-600/80 to-blue-500/80 text-white font-bold">Solicita propuesta</a></div></Card3D><Card3D className="h-full"><div className="bg-black/60 p-8 rounded-2xl h-full border border-pink-500/30 flex flex-col"><div className="mb-6 flex items-center gap-3"><span className="text-pink-400 text-sm font-bold uppercase">Marketing</span></div><h3 className="text-2xl font-bold mb-3">Contenido Auténtico</h3><p className="text-gray-400 text-sm mb-6">Historias para captar alumnos.</p><a href={getWALink("Hola, soy de Marketing.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-pink-600/80 to-pink-500/80 text-white font-bold">Empieza ahora</a></div></Card3D><Card3D className="h-full"><div className="bg-black/60 p-8 rounded-2xl h-full border border-green-500/30 flex flex-col"><div className="mb-6 flex items-center gap-3"><span className="text-green-400 text-sm font-bold uppercase">Docentes</span></div><h3 className="text-2xl font-bold mb-3">Tu Asistente IA</h3><p className="text-gray-400 text-sm mb-6">Ahorra tiempo y sé líder.</p><a href={getWALink("Hola, soy Docente.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-green-600/80 to-green-500/80 text-white font-bold">Prueba gemelo IA</a></div></Card3D></div><BackToTop/></div></section>
+                    {/* PLANES / BUYER PERSONAS */}
+                    <section id="planes" className="py-24 border-t border-white/5 bg-gradient-to-b from-black to-green-900/10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl font-bold text-white mb-4">Soluciones por <span className="text-green-400">Perfil</span></h2>
+                                <p className="text-gray-400 mb-6 max-w-2xl mx-auto">Propuestas diseñadas específicamente para las necesidades de cada rol en tu colegio.</p>
+                                <div className="inline-block max-w-2xl mx-auto bg-green-900/20 border border-green-500/30 rounded-lg px-6 py-3 backdrop-blur-sm">
+                                    <p className="text-sm text-green-200/90 italic flex gap-2 items-start justify-center text-left md:text-center"><span className="mt-1"><Icon name="sparkles" size={14} className="text-green-400 flex-shrink-0"/></span> Nota: Las propuestas son flexibles y se pueden generar otras en función de las necesidades y/o requerimientos de los docentes y escuelas.</p>
+                                </div>
+                            </div>
 
-                    <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30"><div className="max-w-7xl mx-auto px-4 text-center mb-12"><h2 className="text-4xl font-bold mb-4">Recursos <span className="text-green-400">Valor</span></h2><div className="grid md:grid-cols-3 gap-6 mt-8">{[{i:"file-text",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},{i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},{i:"compass",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}].map((r,i)=><div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group"><div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div><h3 className="text-xl font-bold mb-2">{r.t}</h3><a href={r.u} target="_blank" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a></div>)}</div><BackToTop/></div></section>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {/* 1. Directores Generales */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-yellow-500/30 flex flex-col hover:border-yellow-500/60 transition-all shadow-lg hover:shadow-yellow-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-yellow-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-yellow-500/20 text-yellow-400"><Icon name="crown" size={24}/></div>
+                                            <span className="text-yellow-400 text-sm font-bold tracking-wider uppercase">Directores Generales y Propietarios</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Convierte la IA en ventaja competitiva</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Diferénciate en Querétaro con proyectos visibles, evidencias medibles y una narrativa de innovación ética que fortalece matrícula y reputación.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Portafolio institucional de proyectos de IA (Open House).",
+                                                "Reportes ejecutivos con métricas para consejo directivo.",
+                                                "Kit de comunicación para padres (uso seguro y ético).",
+                                                "Gemelo institucional para simular escenarios estratégicos."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-yellow-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-yellow-500/5 p-4 rounded-lg border border-yellow-500/10 mb-6">
+                                            <p className="text-xs text-yellow-200/80 italic"><strong className="text-yellow-400">Resultado:</strong> Tu colegio se posiciona como referente de innovación, atrayendo familias comprometidas.</p>
+                                        </div>
 
-                    <section id="herramientas" className="py-20 bg-black/30 relative"><div className="max-w-7xl mx-auto px-4 relative z-10"><div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div><div className="grid lg:grid-cols-2 gap-10"><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div><LiveVoiceAgent apiKey={geminiKey} /></div><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="image"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div><ImageEditor apiKey={geminiKey} /></div></div><BackToTop/></div></section>
+                                        <a href={getWALink("Hola, soy Director/Propietario y quiero un diagnóstico sin costo.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-yellow-600/80 to-yellow-500/80 hover:from-yellow-500 hover:to-yellow-400 text-white font-bold border border-yellow-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Agenda tu diagnóstico sin costo
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                                {/* 2. Directores Académicos */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-blue-500/30 flex flex-col hover:border-blue-500/60 transition-all shadow-lg hover:shadow-blue-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-blue-500/20 text-blue-400"><Icon name="book-open" size={24}/></div>
+                                            <span className="text-blue-400 text-sm font-bold tracking-wider uppercase">Académicos y Coordinadores</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">IA integrada al currículo con acompañamiento</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Eleva la calidad de la práctica docente sin resistencias, con un modelo de gemelos pedagógicos personalizados y co-diseño por materia.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Co-diseño curricular: prompts y rúbricas alineadas a tu modelo.",
+                                                "Gemelo pedagógico para cada docente (ahorro 6-8h/sem).",
+                                                "Ciclos de mentoría pedagógica con acompañamiento experto.",
+                                                "Métricas de impacto por docente y por nivel."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-blue-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/10 mb-6">
+                                            <p className="text-xs text-blue-200/80 italic"><strong className="text-blue-400">Resultado:</strong> Un equipo docente actualizado, con herramientas que mejoran la enseñanza y generan evidencias.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy Coordinador Académico y quiero una propuesta personalizada.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-blue-600/80 to-blue-500/80 hover:from-blue-500 hover:to-blue-400 text-white font-bold border border-blue-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Solicita una propuesta personalizada
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                                {/* 3. Marketing */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-pink-500/30 flex flex-col hover:border-pink-500/60 transition-all shadow-lg hover:shadow-pink-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-pink-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-pink-500/20 text-pink-400"><Icon name="megaphone" size={24}/></div>
+                                            <span className="text-pink-400 text-sm font-bold tracking-wider uppercase">Marketing y Admisiones</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Contenido auténtico para captar alumnos</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Transforma la innovación interna en historias, proyectos y testimonios que llenan tu calendario de contenidos y fortalecen tu embudo.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Portafolio de proyectos documentados (fotos, videos, historias).",
+                                                "Banco de testimonios de docentes y estudiantes.",
+                                                "Calendario editorial basado en evidencias del aula.",
+                                                "Mensajes clave diferenciados para recorridos y campañas."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-pink-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-pink-500/5 p-4 rounded-lg border border-pink-500/10 mb-6">
+                                            <p className="text-xs text-pink-200/80 italic"><strong className="text-pink-400">Resultado:</strong> Aumento en conversión de inscripciones y percepción clara de innovación.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy de Marketing y quiero generar contenido de IA.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-pink-600/80 to-pink-500/80 hover:from-pink-500 hover:to-pink-400 text-white font-bold border border-pink-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Empieza a generar contenido ahora
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                                {/* 4. Docentes */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-green-500/30 flex flex-col hover:border-green-500/60 transition-all shadow-lg hover:shadow-green-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-green-500/20 text-green-400"><Icon name="bot" size={24}/></div>
+                                            <span className="text-green-400 text-sm font-bold tracking-wider uppercase">Docentes (Líderes)</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Tu asistente IA que respeta tu estilo</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Crea tu gemelo pedagógico personalizado y conviértete en referente de innovación en tu colegio, sin tecnicismos ni pérdida del toque humano.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Gemelo pedagógico entrenado con tus planeaciones.",
+                                                "Acompañamiento cercano por cohortes (sesiones prácticas).",
+                                                "Certificación como 'Embajador IA' de tu colegio.",
+                                                "Comunidad local de docentes pioneros para compartir casos."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-green-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-green-500/5 p-4 rounded-lg border border-green-500/10 mb-6">
+                                            <p className="text-xs text-green-200/80 italic"><strong className="text-green-400">Resultado:</strong> Recuperas horas de trabajo, mejoras estrategias y te posicionas como líder.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy Docente y quiero probar mi gemelo IA.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-green-600/80 to-green-500/80 hover:from-green-500 hover:to-green-400 text-white font-bold border border-green-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Quiero probar mi gemelo IA
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* RECURSOS */}
+                    <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30">
+                        <div className="max-w-7xl mx-auto px-4 text-center mb-12"><h2 className="text-4xl font-bold text-white mb-4">Recursos <span className="text-green-400">Valor</span></h2><div className="grid md:grid-cols-3 gap-6 mt-8">{[{i:"file-text",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},{i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},{i:"compass",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}].map((r,i)=><div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group"><div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div><h3 className="text-xl font-bold mb-2">{r.t}</h3><a href={r.u} target="_blank" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a></div>)}</div><BackToTop/></div></section>
+
+                    <section id="herramientas" className="py-20 bg-black/30 relative"><div className="max-w-7xl mx-auto px-4 relative z-10"><div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div><div className="grid lg:grid-cols-2 gap-10"><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div><LiveVoiceAgent config={apiConfig} /></div><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="image"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div><ImageEditor config={apiConfig} /></div></div><BackToTop/></div></section>
 
                     <section id="testimonios" className="py-20"><div className="max-w-7xl mx-auto px-4"><h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2><div className="text-center mb-12"><a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline"><Icon name="play" size={16}/> Ver Casos (Demo 5 min)</a></div><DemoVideo/><TestimonialCarousel/><BackToTop/></div></section>
 
