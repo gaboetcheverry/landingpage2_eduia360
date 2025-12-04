@@ -35,6 +35,7 @@
     <style>
         html { scroll-behavior: smooth; }
         .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        /* Asegurar que el canvas de fondo no bloquee clics */
         canvas { pointer-events: none; }
         /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -62,7 +63,7 @@
         };
 
         // --- CONFIGURACIÓN ---
-        const DEFAULT_GEMINI_KEY = "AIzaSyDm7PnzwArucbUZlog2bMSezyuEfabaLwk"; 
+        const DEFAULT_GEMINI_KEY = "AIzaSyDWY0AW_0OBinkTJhDvvHz7HS-jnEvcJsI"; 
 
         const NAV_LINKS = [
             { name: 'Inicio', href: '#inicio' },
@@ -104,9 +105,8 @@
             const imagePart = payload.image; 
 
             try {
-                // Usamos el modelo preview que es más compatible con claves nuevas de AI Studio
+                // Gemini 2.5 Flash Preview (Más compatible con claves AI Studio nuevas)
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                
                 const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
                 if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
                 
@@ -310,7 +310,7 @@
             return (
                 <div className="bg-gray-900/80 border border-green-500/30 rounded-xl p-6 backdrop-blur-sm">
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
-                        <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 animate-pulse' : 'bg-green-600 hover:bg-green-500'}`} onClick={handleMicClick}>
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-green-600 hover:bg-green-500 shadow-[0_0_20px_rgba(22,163,74,0.4)]'}`} onClick={handleMicClick}>
                             {isListening ? <Icon name="mic-off" size={32} className="text-white" /> : <Icon name="mic" size={32} className="text-white" />}
                         </div>
                         <div className="min-h-[80px]">
