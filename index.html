@@ -67,11 +67,10 @@
             return <i ref={iconRef} data-lucide={name} className={className}></i>;
         };
 
-        // --- CONFIGURACIÓN POR DEFECTO ---
-        // Clave por defecto para facilitar el inicio (sujeta a límites)
+        // --- DATOS ---
+        // Definimos la constante con el nombre correcto que espera la App
         const DEFAULT_GEMINI_KEY = "AIzaSyDm7PnzwArucbUZlog2bMSezyuEfabaLwk";
 
-        // --- DATOS ---
         const NAV_LINKS = [
             { name: 'Inicio', href: '#inicio' },
             { name: 'Propuesta', href: '#objetivo' },
@@ -110,7 +109,13 @@
                         body: JSON.stringify({ contents: [{ parts }] })
                     });
 
-                    if (res.status === 403) throw new Error("🚫 Clave inválida o restringida.");
+                    if (res.status === 403) {
+                         const msg = window.location.hostname.includes('github.io') 
+                            ? "🚫 Acceso denegado. Verifica que la URL en Google Cloud coincida con tu GitHub." 
+                            : "🔒 Seguridad activa: La clave por defecto solo funciona en la web oficial. Para probar aquí, usa tu propia clave en Configuración ⚙️.";
+                        throw new Error(msg);
+                    }
+
                     if (res.status === 429) throw new Error("⏳ Límite de cuota excedido. Espera 1 min.");
                     if (!res.ok) {
                         const err = await res.json().catch(() => ({}));
@@ -149,7 +154,7 @@
                 return responseText;
 
             } catch (error) {
-                console.error("API Error:", error);
+                console.warn("API Info:", error.message); // Warn instead of Error to keep console cleaner
                 throw error;
             }
         };
@@ -562,7 +567,7 @@
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-            const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: '' });
+            const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
             const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
             const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
             const closeMenu = () => setIsMobileMenuOpen(false);
@@ -881,10 +886,31 @@
 
                     {/* RECURSOS */}
                     <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30">
-                        <div className="max-w-7xl mx-auto px-4 text-center mb-12"><h2 className="text-4xl font-bold text-white mb-4">Recursos <span className="text-green-400">Valor</span></h2><div className="grid md:grid-cols-3 gap-6 mt-8">{[{i:"file-text",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},{i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},{i:"compass",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}].map((r,i)=><div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group"><div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div><h3 className="text-xl font-bold mb-2">{r.t}</h3><a href={r.u} target="_blank" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a></div>)}</div><BackToTop/></div></section>
+                        <div className="max-w-7xl mx-auto px-4 text-center mb-12"><h2 className="text-4xl font-bold text-white mb-4">Recursos de <span className="text-green-400">Valor</span></h2><p className="text-gray-400">Descarga nuestras herramientas gratuitas.</p></div>
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {[
+                                { icon: "file-text", title: "Checklist de integración curricular en 30 minutos", text: "Guía rápida para integrar curricularmente la IA.", action: "Descargar gratis", url: "https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing" },
+                                { icon: "book-open", title: "Syllabus editable con IA aplicada", text: "Plantilla lista para usar con IA aplicada a tu materia.", action: "Obtener plantilla", url: "https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing" },
+                                { icon: "compass", title: "Guía para directivos: despliegue de IA en 8 semanas", text: "Estrategia paso a paso para el despliegue de IA.", action: "Recibe la guía", url: "https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing" }
+                            ].map((res, idx) => (
+                                <div key={idx} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 transition-all group hover:bg-gray-800/80">
+                                    <div className="text-3xl mb-4"><Icon name={res.icon} size={32}/></div>
+                                    <h3 className="text-xl font-bold text-white mb-2 leading-snug">{res.title}</h3>
+                                    <p className="text-sm text-gray-400 mb-4 h-10">{res.text}</p>
+                                    <a href={res.url} target="_blank" rel="noreferrer" className="text-green-400 font-bold flex items-center gap-2 group-hover:translate-x-2 transition-transform">{res.action} <Icon name="external-link" size={14} /></a>
+                                </div>
+                            ))}
+                        </div>
+                        <BackToTop />
+                    </section>
 
-                    <section id="herramientas" className="py-20 bg-black/30 relative"><div className="max-w-7xl mx-auto px-4 relative z-10"><div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div><div className="grid lg:grid-cols-2 gap-10"><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div><LiveVoiceAgent config={apiConfig} /></div><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="image"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div><ImageEditor config={apiConfig} /></div></div><BackToTop/></div></section>
+                    {/* HERRAMIENTAS LIVE DEMO */}
+                    <section id="herramientas" className="py-20 bg-black/30 border-y border-white/5 relative">
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div><div className="grid lg:grid-cols-2 gap-10"><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div><LiveVoiceAgent config={apiConfig} /></div><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="image"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div><ImageEditor config={apiConfig} /></div></div><BackToTop/></div></section>
 
+                    {/* TESTIMONIOS */}
                     <section id="testimonios" className="py-20"><div className="max-w-7xl mx-auto px-4"><h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2><div className="text-center mb-12"><a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline"><Icon name="play" size={16}/> Ver Casos (Demo 5 min)</a></div><DemoVideo/><TestimonialCarousel/><BackToTop/></div></section>
 
                     <section className="relative h-[500px]"><Vortex className="flex items-center flex-col justify-center px-4 w-full h-full" containerClassName="bg-black"><h2 className="text-white text-4xl font-bold text-center">¿Listo para transformar tu escuela?</h2><div className="flex gap-4 mt-8"><a href={getWALink("Hola, quiero unirme.")} target="_blank" className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-full font-bold text-white shadow-lg">Comenzar ahora</a></div></Vortex></section>
