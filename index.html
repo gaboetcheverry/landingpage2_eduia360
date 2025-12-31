@@ -55,7 +55,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- COMPONENTE DE ICONOS ROBUSTO ---
+        // --- COMPONENTE DE ICONOS ---
         const Icon = ({ name, size = 24, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
@@ -67,9 +67,9 @@
             return <i ref={iconRef} data-lucide={name} className={className}></i>;
         };
 
-        // --- CONFIGURACIÓN Y DATOS ---
-        // TU NUEVA API KEY (Ya probada y funcional)
-        const DEFAULT_GEMINI_KEY = "AIzaSyDWY0AW_0OBinkTJhDvvHz7HS-jnEvcJsI";
+        // --- DATOS ---
+        // CLAVE RESTRINGIDA PARA GITHUB
+        const DEFAULT_GEMINI_KEY = "AIzaSyCgQrJvnB6jEYgjZD3i9cLViWGTTLDZ9dA";
 
         const NAV_LINKS = [
             { name: 'Inicio', href: '#inicio' },
@@ -114,7 +114,7 @@
                          // Mensaje de error específico para ayudar a depurar la restricción de dominio
                          const msg = window.location.hostname.includes('github.io') 
                             ? "🚫 Acceso denegado (403). Revisa en Google Cloud que la restricción sea: https://gaboetcheverry.github.io/*" 
-                            : "🔒 Seguridad activa: La clave por defecto solo funciona en la web oficial (GitHub Pages).";
+                            : "🔒 Seguridad activa: La clave por defecto solo funciona en la web oficial (GitHub Pages). Para probar aquí, usa tu propia clave en Configuración ⚙️.";
                         throw new Error(msg);
                     }
 
@@ -233,7 +233,6 @@
             </div>
         );
 
-        // (QuantumBackground, Vortex, Card3D, StatsGraph se mantienen igual para ahorrar espacio en la respuesta, pero son necesarios)
         const QuantumBackground = () => {
             const canvasRef = useRef(null);
             useEffect(() => {
