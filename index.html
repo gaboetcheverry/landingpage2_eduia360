@@ -1,897 +1,900 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Settings, X, ArrowUp, Bot, Mic, MicOff, Upload, ScanEye, Sparkles, Send, Play, 
-  ChevronLeft, ChevronRight, Hourglass, UserCheck, BarChart2, Shield, HeartHandshake, 
-  Crown, BookOpen, Megaphone, ExternalLink, Phone, Menu, ArrowRight, Check, Globe
-} from 'lucide-react';
-
-// --- ESTILOS PERSONALIZADOS (Inyectados para animaciones) ---
-const CustomStyles = () => (
-  <style>{`
-    html { scroll-behavior: smooth; }
-    .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
-    .perspective-1000 { perspective: 1000px; }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edu IA 360° | Transformación Educativa</title>
     
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .animate-fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    @keyframes draw { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-    .animate-draw { animation: draw 2s ease-in-out forwards; }
-    
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    .animate-float { animation: float 3s ease-in-out infinite; }
-    
-    /* Scrollbar chat */
-    .chat-scroll::-webkit-scrollbar { width: 4px; }
-    .chat-scroll::-webkit-scrollbar-track { background: transparent; }
-    .chat-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
-  `}</style>
-);
-
-// --- MAPA DE ICONOS ---
-const iconMap = {
-  settings: Settings, x: X, 'arrow-up': ArrowUp, bot: Bot, mic: Mic, 'mic-off': MicOff,
-  upload: Upload, 'scan-eye': ScanEye, sparkles: Sparkles, send: Send, play: Play,
-  'chevron-left': ChevronLeft, 'chevron-right': ChevronRight, hourglass: Hourglass,
-  'user-check': UserCheck, 'bar-chart-2': BarChart2, shield: Shield, 'heart-handshake': HeartHandshake,
-  crown: Crown, 'book-open': BookOpen, megaphone: Megaphone, 'external-link': ExternalLink,
-  phone: Phone, menu: Menu, 'arrow-right': ArrowRight, check: Check, globe: Globe
-};
-
-const Icon = ({ name, size = 24, className = "" }) => {
-  const LucideIcon = iconMap[name] || Bot;
-  return <LucideIcon size={size} className={className} />;
-};
-
-// --- DATOS Y CONSTANTES ---
-const DEFAULT_GEMINI_KEY = "AIzaSyCgQrJvnB6jEYgjZD3i9cLViWGTTLDZ9dA"; // Nota: Usar con precaución en prod
-
-const NAV_LINKS = [
-    { name: 'Inicio', href: '#inicio' },
-    { name: 'Propuesta', href: '#objetivo' },
-    { name: 'Beneficios', href: '#beneficios' },
-    { name: 'Planes', href: '#planes' },
-    { name: 'Recursos', href: '#recursos' },
-    { name: 'Herramientas', href: '#herramientas' },
-    { name: 'Casos', href: '#testimonios' },
-];
-
-const SITE_KNOWLEDGE = `ERES EL ASISTENTE DE IA DE "EDU IA 360°". TU OBJETIVO: Ayudar a docentes y directivos a entender los servicios de consultoría, formación e implementación de IA en colegios.`;
-
-// --- LÓGICA CENTRAL DE API ---
-const callUnifiedAPI = async (payload, config) => {
-    const { provider, apiKey } = config;
-    if (!apiKey) throw new Error("⚠️ No hay API Key configurada. Ve al engranaje ⚙️.");
-
-    const sysPrompt = payload.system || "Eres un asistente útil.";
-    const userMsg = payload.user || "";
-    const imagePart = payload.image; 
-
-    try {
-        let responseText = "";
-
-        if (provider === 'gemini') {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
-            if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
-
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts }] })
-            });
-
-            if (res.status === 403) throw new Error("🔒 Acceso denegado. Usa tu propia API Key en Configuración.");
-            if (res.status === 429) throw new Error("⏳ Límite de cuota excedido. Espera 1 min.");
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error?.message || `Error ${res.status}`);
+    <!-- Configuración Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out forwards',
+                        'draw': 'draw 2s ease-in-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        draw: { '0%': { strokeDasharray: '1000', strokeDashoffset: '1000' }, '100%': { strokeDashoffset: '0' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                    },
+                }
             }
-            const data = await res.json();
-            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta.";
-
-        } else if (provider === 'openai') {
-            if (imagePart) throw new Error("El análisis de imagen en esta demo web solo está optimizado para Gemini.");
-            const res = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o-mini", 
-                    messages: [
-                        { role: "system", content: sysPrompt },
-                        { role: "user", content: userMsg }
-                    ]
-                })
-            });
-
-            if (res.status === 401) throw new Error("🚫 Clave OpenAI inválida.");
-            if (res.status === 429) throw new Error("⏳ Cuota OpenAI excedida.");
-            if (!res.ok) throw new Error(`Error OpenAI ${res.status}`);
-
-            const data = await res.json();
-            responseText = data.choices?.[0]?.message?.content || "Sin respuesta.";
         }
-        return responseText;
-    } catch (error) {
-        console.warn("API Info:", error.message); 
-        throw error;
-    }
-};
+    </script>
+    
+    <!-- React, ReactDOM, Babel, Lucide -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        canvas { pointer-events: none; }
+        .perspective-1000 { perspective: 1000px; }
+        /* Scrollbar personalizada chat */
+        .chat-scroll::-webkit-scrollbar { width: 4px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-black text-gray-100 font-sans overflow-x-hidden">
+    <div id="root"></div>
 
-// --- COMPONENTES AUXILIARES ---
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
-    if (!isOpen) return null;
-    const [localConfig, setLocalConfig] = useState(config);
-    const [statusMsg, setStatusMsg] = useState("");
+        // --- COMPONENTE DE ICONOS PARA CDN ---
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                const pascalName = name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+                if (iconRef.current && lucide && lucide.icons && lucide.icons[pascalName]) {
+                    lucide.createIcons({ 
+                        icons: { [name]: lucide.icons[pascalName] }, 
+                        nameAttr: 'data-lucide', 
+                        attrs: { class: className, width: size, height: size } 
+                    });
+                }
+            }, [name, className, size]);
+            return <i ref={iconRef} data-lucide={name} className={className}></i>;
+        };
 
-    useEffect(() => { setLocalConfig(config); }, [config]);
+        // --- DATOS ---
+        const DEFAULT_GEMINI_KEY = "AIzaSyCgQrJvnB6jEYgjZD3i9cLViWGTTLDZ9dA";
 
-    const testConnection = async () => {
-        setStatusMsg("Probando conexión...");
-        try {
-            await callUnifiedAPI({ user: "Hola", system: "Responde 'OK'." }, localConfig);
-            setStatusMsg("✅ ¡Conexión Exitosa!");
-            setTimeout(() => setStatusMsg(""), 2000);
-            onSave(localConfig); 
-        } catch (e) {
-            setStatusMsg(`❌ Error: ${e.message}`);
-        }
-    };
+        const NAV_LINKS = [
+            { name: 'Inicio', href: '#inicio' },
+            { name: 'Propuesta', href: '#objetivo' },
+            { name: 'Beneficios', href: '#beneficios' },
+            { name: 'Planes', href: '#planes' },
+            { name: 'Recursos', href: '#recursos' },
+            { name: 'Herramientas', href: '#herramientas' },
+            { name: 'Casos', href: '#testimonios' },
+        ];
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><Icon name="x"/></button>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Icon name="settings" className="text-green-400"/> Configuración IA</h3>
-                
-                <div className="space-y-6">
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-2 font-bold">Proveedor de IA</label>
-                        <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
-                            <button onClick={() => setLocalConfig({...localConfig, provider: 'gemini'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-colors ${localConfig.provider === 'gemini' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'}`}>Gemini (Google)</button>
-                            <button onClick={() => setLocalConfig({...localConfig, provider: 'openai'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-colors ${localConfig.provider === 'openai' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>OpenAI (GPT)</button>
+        const SITE_KNOWLEDGE = `ERES EL ASISTENTE DE IA DE "EDU IA 360°". TU OBJETIVO: Ayudar a docentes y directivos a entender los servicios de consultoría, formación e implementación de IA en colegios.`;
+
+        // --- LÓGICA CENTRAL DE API ---
+        const callUnifiedAPI = async (payload, config) => {
+            const { provider, apiKey } = config;
+            
+            if (!apiKey) throw new Error("⚠️ No hay API Key configurada. Ve al engranaje ⚙️.");
+
+            const sysPrompt = payload.system || "Eres un asistente útil.";
+            const userMsg = payload.user || "";
+            const imagePart = payload.image; 
+
+            try {
+                let responseText = "";
+
+                if (provider === 'gemini') {
+                    // --- LÓGICA GEMINI ---
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                    
+                    const parts = [{ text: `${sysPrompt}\n\nUsuario: ${userMsg}` }];
+                    if (imagePart) parts.push({ inlineData: { mimeType: imagePart.mimeType, data: imagePart.data } });
+
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts }] })
+                    });
+
+                    if (res.status === 403) {
+                         const msg = window.location.hostname.includes('github.io') 
+                            ? "🚫 Acceso denegado (403). Revisa en Google Cloud que la restricción sea correcta." 
+                            : "🔒 Seguridad activa: Usa tu propia clave en Configuración ⚙️.";
+                        throw new Error(msg);
+                    }
+
+                    if (res.status === 429) throw new Error("⏳ Límite de cuota excedido. Espera 1 min.");
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error?.message || `Error ${res.status}`);
+                    }
+                    const data = await res.json();
+                    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta.";
+
+                } else if (provider === 'openai') {
+                    // --- LÓGICA OPENAI ---
+                    if (imagePart) throw new Error("El análisis de imagen en esta demo web solo está optimizado para Gemini.");
+
+                    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-4o-mini", 
+                            messages: [
+                                { role: "system", content: sysPrompt },
+                                { role: "user", content: userMsg }
+                            ]
+                        })
+                    });
+
+                    if (res.status === 401) throw new Error("🚫 Clave OpenAI inválida.");
+                    if (res.status === 429) throw new Error("⏳ Cuota OpenAI excedida.");
+                    if (!res.ok) throw new Error(`Error OpenAI ${res.status}`);
+
+                    const data = await res.json();
+                    responseText = data.choices?.[0]?.message?.content || "Sin respuesta.";
+                }
+
+                return responseText;
+
+            } catch (error) {
+                console.warn("API Info:", error.message); 
+                throw error;
+            }
+        };
+
+        // --- COMPONENTES AUXILIARES ---
+
+        const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
+            if (!isOpen) return null;
+            const [localConfig, setLocalConfig] = useState(config);
+            const [statusMsg, setStatusMsg] = useState("");
+
+            useEffect(() => {
+                setLocalConfig(config);
+            }, [config]);
+
+            const testConnection = async () => {
+                setStatusMsg("Probando conexión...");
+                try {
+                    await callUnifiedAPI({ user: "Hola", system: "Responde 'OK' si recibes esto." }, localConfig);
+                    setStatusMsg("✅ ¡Conexión Exitosa!");
+                    setTimeout(() => setStatusMsg(""), 2000);
+                    onSave(localConfig); 
+                } catch (e) {
+                    setStatusMsg(`❌ Error: ${e.message}`);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><Icon name="x"/></button>
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Icon name="settings" className="text-green-400"/> Configuración IA</h3>
+                        
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2 font-bold">Proveedor de IA</label>
+                                <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+                                    <button onClick={() => setLocalConfig({...localConfig, provider: 'gemini'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-colors ${localConfig.provider === 'gemini' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'}`}>Gemini (Google)</button>
+                                    <button onClick={() => setLocalConfig({...localConfig, provider: 'openai'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-colors ${localConfig.provider === 'openai' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>OpenAI (GPT)</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2 font-bold">API Key ({localConfig.provider.toUpperCase()})</label>
+                                <input 
+                                    type="password" 
+                                    value={localConfig.apiKey} 
+                                    onChange={(e) => setLocalConfig({...localConfig, apiKey: e.target.value})} 
+                                    placeholder={`Pega tu clave de ${localConfig.provider} aquí...`} 
+                                    className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none text-sm"
+                                />
+                                <p className="text-xs text-gray-500 mt-2">Tu clave se guarda solo en tu navegador.</p>
+                            </div>
+
+                            {statusMsg && <div className={`text-sm p-2 rounded ${statusMsg.includes('Exitos') ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>{statusMsg}</div>}
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-8">
+                            <button onClick={testConnection} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium text-sm">Probar Conexión</button>
+                            <button onClick={() => { onSave(localConfig); onClose(); }} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/20">Guardar</button>
                         </div>
                     </div>
-
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-2 font-bold">API Key ({localConfig.provider.toUpperCase()})</label>
-                        <input 
-                            type="password" 
-                            value={localConfig.apiKey} 
-                            onChange={(e) => setLocalConfig({...localConfig, apiKey: e.target.value})} 
-                            placeholder={`Pega tu clave de ${localConfig.provider} aquí...`} 
-                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none text-sm"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">Tu clave se guarda solo en tu navegador.</p>
-                    </div>
-
-                    {statusMsg && <div className={`text-sm p-2 rounded ${statusMsg.includes('Exitos') ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>{statusMsg}</div>}
                 </div>
-
-                <div className="flex justify-end gap-3 mt-8">
-                    <button onClick={testConnection} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium text-sm">Probar Conexión</button>
-                    <button onClick={() => { onSave(localConfig); onClose(); }} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/20">Guardar</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const BackToTop = () => (
-    <div className="flex justify-end mt-8">
-        <a href="#inicio" className="group flex items-center gap-2 text-sm text-green-400 hover:text-white transition-all opacity-70 hover:opacity-100">
-            <span className="group-hover:-translate-y-1 transition-transform duration-300"><Icon name="arrow-up" size={16} /></span> 
-            Volver al inicio
-        </a>
-    </div>
-);
-
-const QuantumBackground = () => {
-    const canvasRef = useRef(null);
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let animationFrameId;
-        let particles = [];
-        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-        window.addEventListener('resize', resize);
-        resize();
-        class Particle {
-            constructor() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 2; }
-            update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > canvas.width) this.vx *= -1; if (this.y < 0 || this.y > canvas.height) this.vy *= -1; }
-            draw() { ctx.fillStyle = 'rgba(74, 222, 128, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
-        }
-        for (let i = 0; i < 60; i++) particles.push(new Particle());
-        const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#000000'); gradient.addColorStop(1, '#022c22');
-            ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, index) => {
-                p.update(); p.draw();
-                for (let j = index + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x; const dy = p.y - p2.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < 150) { ctx.strokeStyle = `rgba(74, 222, 128, ${0.1 - distance/1500})`; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
-                }
-            });
-            animationFrameId = requestAnimationFrame(animate);
-        };
-        animate();
-        return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
-    }, []);
-    return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full -z-10 pointer-events-none" />;
-};
-
-const Vortex = ({ children, className, containerClassName, particleCount = 200 }) => {
-    const canvasRef = useRef(null);
-    const containerRef = useRef(null);
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const container = containerRef.current;
-        if (!canvas || !container) return;
-        const ctx = canvas.getContext('2d');
-        let animationFrameId;
-        let particles = [];
-        const resize = () => { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; };
-        resize();
-        window.addEventListener('resize', resize);
-        const center = { x: canvas.width / 2, y: canvas.height / 2 };
-        class Particle {
-            constructor() { this.reset(); }
-            reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2 + 0.5; this.speed = Math.random() * 2 + 0.5; this.angle = Math.random() * Math.PI * 2; this.radius = Math.random() * Math.max(canvas.width, canvas.height) * 0.8; this.hue = 120 + Math.random() * 60; }
-            update() { this.angle += this.speed * 0.005; this.radius -= this.speed * 0.5; this.x = center.x + Math.cos(this.angle) * this.radius; this.y = center.y + Math.sin(this.angle) * this.radius; if (this.radius < 5) { this.reset(); this.radius = Math.max(canvas.width, canvas.height) * 0.6; } }
-            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = `hsla(${this.hue}, 80%, 50%, 0.6)`; ctx.fill(); }
-        }
-        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
-        const animate = () => { ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height); center.x = canvas.width / 2; center.y = canvas.height / 2; particles.forEach(p => { p.update(); p.draw(); }); animationFrameId = requestAnimationFrame(animate); };
-        animate();
-        return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
-    }, [particleCount]);
-    return ( <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${containerClassName || ''}`}> <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" /> <div className={`relative z-10 ${className || ''}`}>{children}</div> </div> );
-};
-
-const Card3D = ({ children, className = "" }) => {
-    const cardRef = useRef(null);
-    const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg)");
-    const handleMouseMove = (e) => { if (!cardRef.current) return; const { left, top, width, height } = cardRef.current.getBoundingClientRect(); const x = (e.clientX - left - width / 2) / 20; const y = (e.clientY - top - height / 2) / 20; setTransform(`perspective(1000px) rotateX(${-y}deg) rotateY(${x}deg) scale(1.02)`); };
-    return ( <div ref={cardRef} className={`transition-transform duration-200 ease-out ${className}`} onMouseMove={handleMouseMove} onMouseLeave={() => setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)")} style={{ transform }}> {children} </div> );
-};
-
-const StatsGraph = () => {
-    const data = [2, 4, 6, 5, 8, 12, 15, 20, 25, 28];
-    const width = 300; const height = 100;
-    const points = data.map((d, i) => { const x = (i / (data.length - 1)) * width; const y = height - (d / 30) * height; return `${x},${y}`; }).join(' ');
-    return (
-        <div className="w-full overflow-hidden">
-            <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-                <defs><linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#4ade80" /><stop offset="100%" stopColor="#0d9488" /></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-                <polyline points={points} fill="none" stroke="url(#line-gradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)" className="animate-draw" />
-                {data.map((d, i) => { const x = (i / (data.length - 1)) * width; const y = height - (d / 30) * height; return <circle key={i} cx={x} cy={y} r="3" fill="#fff" className="opacity-0 animate-fade-in" style={{animationDelay: `${i * 0.1}s`, animationFillMode: 'forwards'}}/> })}
-            </svg>
-        </div>
-    );
-};
-
-const LiveVoiceAgent = ({ config }) => {
-    const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState("");
-    const [response, setResponse] = useState("Hola, soy tu asistente pedagógico. Presiona el micrófono para hablar.");
-    const [loading, setLoading] = useState(false);
-    
-    const handleMicClick = () => {
-        if (!config.apiKey) { setResponse("⚠️ Configura tu API Key primero en el icono de engranaje."); return; }
-        if (!window.webkitSpeechRecognition && !window.SpeechRecognition) { setResponse("Navegador no soporta voz."); return; }
-        if (isListening) { setIsListening(false); return; }
-
-        window.speechSynthesis.cancel();
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'es-ES';
-        recognition.interimResults = false;
-        recognition.continuous = false;
-
-        setIsListening(true); 
-        setTranscript("Escuchando...");
-
-        recognition.onresult = async (event) => {
-            const text = event.results[0][0].transcript;
-            setTranscript(`Tú: "${text}"`);
-            setIsListening(false);
-            
-            setLoading(true);
-            try {
-                const reply = await callUnifiedAPI({ user: text, system: "Actúa como experto pedagógico conciso. Responde < 30 palabras." }, config);
-                setResponse(reply);
-                const u = new SpeechSynthesisUtterance(reply); u.lang = 'es-MX'; window.speechSynthesis.speak(u);
-            } catch (e) { setResponse(e.message); }
-            setLoading(false);
+            );
         };
 
-        recognition.onerror = () => { setIsListening(false); setTranscript("Error de micrófono."); };
-        recognition.onend = () => setIsListening(false);
-        try { recognition.start(); } catch (e) { setIsListening(false); }
-    };
-
-    return (
-        <div className="bg-gray-900/80 border border-green-500/30 rounded-xl p-6 backdrop-blur-sm">
-            <div className="flex justify-center mb-6 animate-float">
-                 <div className="w-20 h-20 rounded-full bg-green-900/40 flex items-center justify-center border-2 border-green-500/40 shadow-[0_0_25px_rgba(74,222,128,0.3)]">
-                    <Icon name="bot" size={40} className="text-green-400" />
-                 </div>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center space-y-4">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 animate-pulse shadow-[0_0_30px_rgba(239,68,68,0.6)]' : 'bg-green-600 hover:bg-green-500 shadow-[0_0_20px_rgba(22,163,74,0.4)]'}`} onClick={handleMicClick}>
-                    {isListening ? <Icon name="mic-off" size={32} className="text-white" /> : <Icon name="mic" size={32} className="text-white" />}
-                </div>
-                <div className="min-h-[60px]">
-                    {loading ? <span className="text-green-400 animate-pulse">Pensando ({config.provider})...</span> : <p className="text-gray-300 text-sm italic">{response}</p>}
-                </div>
-                {transcript && <p className="text-xs text-gray-500">{transcript}</p>}
-            </div>
-        </div>
-    );
-};
-
-const ImageEditor = ({ config }) => {
-    const [selectedImage, setSelectedImage] = useState(null);
-    const [analysis, setAnalysis] = useState("");
-    const [loading, setLoading] = useState(false);
-    const fileInputRef = useRef(null);
-
-    const handleImageUpload = (e) => {
-        if(e.target.files[0]) { 
-            const r = new FileReader(); 
-            r.onload = () => { setSelectedImage(r.result); setAnalysis(""); }; 
-            r.readAsDataURL(e.target.files[0]); 
-        }
-    };
-
-    const analyzeImage = async () => {
-        if (!selectedImage) return;
-        if (!config.apiKey) { setAnalysis("⚠️ Configura tu API Key en el engranaje."); return; }
-        setLoading(true);
-        try {
-            const mimeType = selectedImage.split(';')[0].split(':')[1];
-            const base64Data = selectedImage.split(',')[1];
-            const reply = await callUnifiedAPI({ 
-                user: "Analiza este recurso educativo y da 2 tips breves.", 
-                image: { mimeType, data: base64Data }
-            }, config);
-            setAnalysis(reply);
-        } catch (e) { setAnalysis(e.message); }
-        setLoading(false);
-    };
-
-    return (
-        <div className="bg-gray-900/80 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm flex flex-col h-full">
-            <div className="flex justify-center mb-4">
-                 <div className="w-14 h-14 rounded-full bg-blue-900/30 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                    <Icon name="scan-eye" size={28} className="text-blue-400" />
-                 </div>
-            </div>
-
-            {!selectedImage ? (
-                <div onClick={() => fileInputRef.current.click()} className="flex-grow border-2 border-dashed border-gray-600 hover:border-blue-400 rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-colors">
-                    <Icon name="upload" className="text-gray-400 mb-2" size={32} />
-                    <p className="text-sm text-gray-400 text-center">Subir imagen</p>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </div>
-            ) : (
-                <div className="flex flex-col h-full">
-                    <div className="relative h-48 mb-4 bg-black rounded-lg overflow-hidden">
-                        <img src={selectedImage} alt="Uploaded" className="w-full h-full object-contain" />
-                        <button onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full hover:bg-red-500 text-white"><Icon name="x" size={16}/></button>
-                    </div>
-                    {analysis ? <div className="bg-blue-900/20 p-3 rounded text-sm text-gray-200 overflow-y-auto max-h-32 border-l-2 border-blue-500">{analysis}</div> : 
-                    <button onClick={analyzeImage} disabled={loading} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold flex justify-center gap-2">{loading ? <Icon name="sparkles" className="animate-spin" size={18}/> : <Icon name="sparkles" size={18}/>} {loading ? "Analizando..." : "Analizar"}</button>}
-                </div>
-            )}
-        </div>
-    );
-};
-
-const ChatWidget = ({ config }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([{ role: 'assistant', text: '¡Hola! Soy el asistente de Edu IA 360. ¿En qué te ayudo?' }]);
-    const [input, setInput] = useState("");
-    const messagesEndRef = useRef(null);
-    useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isOpen]);
-
-    const handleSend = async () => {
-        if (!input.trim()) return;
-        const userMsg = input; setMessages(p => [...p, { role: 'user', text: userMsg }]); setInput("");
-        try {
-            const reply = await callUnifiedAPI({ user: userMsg, system: SITE_KNOWLEDGE }, config);
-            setMessages(p => [...p, { role: 'assistant', text: reply }]);
-        } catch (e) { setMessages(p => [...p, { role: 'assistant', text: e.message }]); }
-    };
-
-    return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-            {isOpen && (
-                <div className="mb-4 w-80 h-96 bg-gray-900 border border-green-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-                    <div className="bg-gradient-to-r from-green-700 to-teal-700 p-4 flex justify-between items-center">
-                        <h3 className="text-white font-bold flex items-center gap-2"><Icon name="bot" size={18}/> Soporte Edu IA</h3>
-                        <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white"><Icon name="x" size={18}/></button>
-                    </div>
-                    <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-black/40 chat-scroll">
-                        {messages.map((m, i) => (
-                            <div key={i} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                {m.role === 'assistant' && (
-                                    <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 shadow-md"><Icon name="bot" size={14} className="text-white" /></div>
-                                )}
-                                <div className={`max-w-[80%] p-3 rounded-lg text-sm shadow-sm ${m.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>{m.text}</div>
-                                {m.role === 'user' && (
-                                    <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0 shadow-md"><Icon name="user-check" size={14} className="text-white" /></div>
-                                )}
-                            </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                    </div>
-                    <div className="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
-                        <input className="flex-grow bg-gray-900 border border-gray-600 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500" placeholder="Escribe tu duda..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
-                        <button onClick={handleSend} className="bg-green-600 hover:bg-green-500 text-white p-2 rounded"><Icon name="send" size={18}/></button>
-                    </div>
-                </div>
-            )}
-            <button onClick={() => setIsOpen(!isOpen)} className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-teal-600 shadow-lg shadow-green-500/40 flex items-center justify-center text-white hover:scale-110 transition-transform">
-                {isOpen ? <Icon name="x" size={28} /> : <Icon name="bot" size={28} />}
-            </button>
-        </div>
-    );
-};
-
-const DemoVideo = () => {
-    const driveViewLink = "https://drive.google.com/file/d/1j35kl_u2xA5WJfSWIlM1NacqqT01X4sR/view?usp=sharing";
-    const driveEmbedLink = "https://drive.google.com/file/d/1j35kl_u2xA5WJfSWIlM1NacqqT01X4sR/preview";
-
-    return (
-        <div className="w-full max-w-5xl mx-auto mb-20 relative group px-4">
-            <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-            <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-900 border border-white/10 shadow-2xl z-10">
-                <iframe className="w-full h-full absolute inset-0" src={driveEmbedLink} title="Demo Edu IA 360" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style={{ border: 'none' }}></iframe>
-            </div>
-            <div className="text-center mt-6 flex flex-col items-center gap-3 animate-fade-in">
-                <p className="text-sm text-gray-400">¿No carga? Drive requiere cookies.</p>
-                <a href={driveViewLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-base font-bold text-white bg-green-600 hover:bg-green-500 px-8 py-3 rounded-full shadow-lg shadow-green-500/20 transition-all hover:scale-105 border border-green-400/50">
-                    <Icon name="play" size={18} fill="currentColor" /> Ver en Drive
+        const BackToTop = () => (
+            <div className="flex justify-end mt-8">
+                <a href="#inicio" className="group flex items-center gap-2 text-sm text-green-400 hover:text-white transition-all opacity-70 hover:opacity-100">
+                    <span className="group-hover:-translate-y-1 transition-transform duration-300"><Icon name="arrow-up" size={16} /></span> 
+                    Volver al inicio
                 </a>
             </div>
-        </div>
-    );
-};
+        );
 
-const TestimonialCarousel = () => {
-    const testimonials = [
-        { initial: "WB", name: "Lic. Wendy Barroso", role: "Asoc. Mexicana Éxito PYME", quote: "Su curso de IA ha sido una experiencia enriquecedora. Gracias por compartir conocimientos de manera tan didáctica y accesible.", color: "bg-green-600" },
-        { initial: "CG", name: "Mtra. Carol G.", role: "Educación Básica", quote: "Ahora puedo enfocarme más en la enseñanza y menos en la preparación. La IA me ayudó a crear recursos en tiempo récord.", color: "bg-blue-600" },
-        { initial: "EC", name: "Doctorante Esmeralda Cofradía", role: "Profesionista", quote: "Me encanta la clase de Edu IA 360. Combina teoría, práctica y herramientas de suma utilidad para las actividades de mi profesión.", color: "bg-pink-600" },
-        { initial: "AR", name: "Mtra. Anabel Rodríguez", role: "Director Académico", quote: "Incorporamos la IA en la curricula del nivel de Maestría en nuestro Centro educativo...", color: "bg-purple-600" },
-        { initial: "AB", name: "Mtro. Antonio Betancourt", role: "UPN", quote: "Agradecemos su participación como facilitador del taller 'Uso ético y estratégico de la IA en la investigación' en el Foro Académico 2025.", color: "bg-orange-600" },
-        { initial: "BR", name: "Mtra. Brenda Rivera", role: "Educación Básica", quote: "Recuperé 7 horas semanales y mejoré mis estrategias didácticas.", color: "bg-teal-600" },
-        { initial: "CG", name: "Mtra. Claudia González", role: "EBC Querétaro", quote: "Aplicación práctica en mis clases y proyectos personales.", color: "bg-indigo-600" }
-    ];
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isPaused, setIsPaused] = useState(false);
-    useEffect(() => {
-        if (isPaused) return;
-        const interval = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % testimonials.length); }, 5000);
-        return () => clearInterval(interval);
-    }, [isPaused, testimonials.length]);
-    const prevSlide = () => { setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1)); };
-    const nextSlide = () => { setCurrentIndex((prev) => (prev + 1) % testimonials.length); };
-    return (
-        <div className="relative w-full max-w-4xl mx-auto" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
-            <div className="overflow-hidden relative min-h-[250px] flex items-center justify-center">
-                {testimonials.map((t, idx) => {
-                    let position = 'opacity-0 translate-x-full pointer-events-none absolute'; 
-                    if (idx === currentIndex) position = 'opacity-100 translate-x-0 z-10 relative';
-                    else if (idx === (currentIndex - 1 + testimonials.length) % testimonials.length) position = 'opacity-0 -translate-x-full absolute'; 
-                    return (
-                        <div key={idx} className={`transition-all duration-500 ease-in-out w-full md:w-3/4 lg:w-2/3 ${position}`}>
-                            <div className="bg-gray-900/60 p-8 rounded-2xl border border-gray-700 backdrop-blur-sm shadow-2xl">
-                                <div className="flex flex-col items-center text-center">
-                                    <div className={`w-16 h-16 ${t.color} rounded-full flex items-center justify-center text-white font-bold text-xl mb-4 shadow-lg shadow-white/10 border border-white/10`}>{t.initial}</div>
-                                    <p className="italic text-gray-200 text-lg mb-6">"{t.quote}"</p>
-                                    <div><p className="font-bold text-white text-lg">{t.name}</p><p className="text-sm text-green-400 font-mono">{t.role}</p></div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            <button onClick={prevSlide} className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-green-600 text-white p-3 rounded-full border border-white/10 backdrop-blur-md transition-all z-20 hover:scale-110" aria-label="Anterior"><Icon name="chevron-left" size={24} /></button>
-            <button onClick={nextSlide} className="absolute right-0 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-green-600 text-white p-3 rounded-full border border-white/10 backdrop-blur-md transition-all z-20 hover:scale-110" aria-label="Siguiente"><Icon name="chevron-right" size={24} /></button>
-            <div className="flex justify-center gap-3 mt-6">
-                {testimonials.map((_, idx) => (
-                    <button key={idx} onClick={() => setCurrentIndex(idx)} className={`w-3 h-3 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-green-500 w-8' : 'bg-gray-600 hover:bg-gray-400'}`} aria-label={`Ir al testimonio ${idx + 1}`} />
-                ))}
-            </div>
-        </div>
-    );
-};
+        const QuantumBackground = () => {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+                let particles = [];
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+                window.addEventListener('resize', resize);
+                resize();
+                class Particle {
+                    constructor() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 2; }
+                    update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > canvas.width) this.vx *= -1; if (this.y < 0 || this.y > canvas.height) this.vy *= -1; }
+                    draw() { ctx.fillStyle = 'rgba(74, 222, 128, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+                }
+                for (let i = 0; i < 60; i++) particles.push(new Particle());
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, '#000000'); gradient.addColorStop(1, '#022c22');
+                    ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach((p, index) => {
+                        p.update(); p.draw();
+                        for (let j = index + 1; j < particles.length; j++) {
+                            const p2 = particles[j];
+                            const dx = p.x - p2.x; const dy = p.y - p2.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < 150) { ctx.strokeStyle = `rgba(74, 222, 128, ${0.1 - distance/1500})`; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
+                        }
+                    });
+                    animationFrameId = requestAnimationFrame(animate);
+                };
+                animate();
+                return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
+            }, []);
+            return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full -z-10 pointer-events-none" />;
+        };
 
-// --- APP PRINCIPAL ---
-export default function App() {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
-    
-    const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
-    const closeMenu = () => setIsMobileMenuOpen(false);
+        const Vortex = ({ children, className, containerClassName, particleCount = 200 }) => {
+            const canvasRef = useRef(null);
+            const containerRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const container = containerRef.current;
+                if (!canvas || !container) return;
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+                let particles = [];
+                const resize = () => { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; };
+                resize();
+                window.addEventListener('resize', resize);
+                const center = { x: canvas.width / 2, y: canvas.height / 2 };
+                class Particle {
+                    constructor() { this.reset(); }
+                    reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2 + 0.5; this.speed = Math.random() * 2 + 0.5; this.angle = Math.random() * Math.PI * 2; this.radius = Math.random() * Math.max(canvas.width, canvas.height) * 0.8; this.hue = 120 + Math.random() * 60; }
+                    update() { this.angle += this.speed * 0.005; this.radius -= this.speed * 0.5; this.x = center.x + Math.cos(this.angle) * this.radius; this.y = center.y + Math.sin(this.angle) * this.radius; if (this.radius < 5) { this.reset(); this.radius = Math.max(canvas.width, canvas.height) * 0.6; } }
+                    draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = `hsla(${this.hue}, 80%, 50%, 0.6)`; ctx.fill(); }
+                }
+                for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+                const animate = () => { ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height); center.x = canvas.width / 2; center.y = canvas.height / 2; particles.forEach(p => { p.update(); p.draw(); }); animationFrameId = requestAnimationFrame(animate); };
+                animate();
+                return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
+            }, [particleCount]);
+            return ( <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${containerClassName || ''}`}> <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" /> <div className={`relative z-10 ${className || ''}`}>{children}</div> </div> );
+        };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('eduia360_config');
-        if (saved) {
-            try { setApiConfig(JSON.parse(saved)); } catch (e) { console.error("Error parsing saved config", e); }
-        }
-    }, []);
+        const Card3D = ({ children, className = "" }) => {
+            const cardRef = useRef(null);
+            const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg)");
+            const handleMouseMove = (e) => { if (!cardRef.current) return; const { left, top, width, height } = cardRef.current.getBoundingClientRect(); const x = (e.clientX - left - width / 2) / 20; const y = (e.clientY - top - height / 2) / 20; setTransform(`perspective(1000px) rotateX(${-y}deg) rotateY(${x}deg) scale(1.02)`); };
+            return ( <div ref={cardRef} className={`transition-transform duration-200 ease-out ${className}`} onMouseMove={handleMouseMove} onMouseLeave={() => setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)")} style={{ transform }}> {children} </div> );
+        };
 
-    const handleSaveSettings = (newConfig) => {
-        setApiConfig(newConfig);
-        localStorage.setItem('eduia360_config', JSON.stringify(newConfig));
-    };
+        const StatsGraph = () => {
+            const data = [2, 4, 6, 5, 8, 12, 15, 20, 25, 28];
+            const width = 300; const height = 100;
+            const points = data.map((d, i) => { const x = (i / (data.length - 1)) * width; const y = height - (d / 30) * height; return `${x},${y}`; }).join(' ');
+            return (
+                <div className="w-full overflow-hidden">
+                    <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+                        <defs><linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#4ade80" /><stop offset="100%" stopColor="#0d9488" /></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                        <polyline points={points} fill="none" stroke="url(#line-gradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)" className="animate-draw" />
+                        {data.map((d, i) => { const x = (i / (data.length - 1)) * width; const y = height - (d / 30) * height; return <circle key={i} cx={x} cy={y} r="3" fill="#fff" className="opacity-0 animate-fade-in" style={{animationDelay: `${i * 0.1}s`, animationFillMode: 'forwards'}}/> })}
+                    </svg>
+                </div>
+            );
+        };
 
-    const isConnected = !!apiConfig.apiKey;
-    const statusColor = isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
-
-    return (
-        <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
-            <CustomStyles />
-            <QuantumBackground />
-            <ChatWidget config={apiConfig} />
-            <SettingsModal 
-                isOpen={isSettingsOpen} 
-                onClose={() => setIsSettingsOpen(false)} 
-                config={apiConfig}
-                onSave={handleSaveSettings} 
-            />
+        const LiveVoiceAgent = ({ config }) => {
+            const [isListening, setIsListening] = useState(false);
+            const [transcript, setTranscript] = useState("");
+            const [response, setResponse] = useState("Hola, soy tu asistente pedagógico. Presiona el micrófono para hablar.");
+            const [loading, setLoading] = useState(false);
             
-            {/* NAV */}
-            <nav className="fixed top-0 w-full z-40 border-b border-white/5 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-20">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
-                            <div className="relative w-10 h-10"><div className="absolute inset-0 bg-gradient-to-br from-green-400 to-blue-600 rounded-full opacity-80 blur-[2px] animate-pulse"></div><div className="absolute inset-1 bg-black rounded-full flex items-center justify-center"><span className="text-lg">🌐</span></div></div>
-                            <span className="text-xl font-bold tracking-tighter text-white">Edu IA <span className="text-green-400">360°</span></span>
-                        </div>
-                        <div className="hidden xl:flex items-center">
-                            <div className="flex items-baseline space-x-4 items-center">
-                                {NAV_LINKS.map((link) => ( <a key={link.name} href={link.href} className="text-sm font-medium text-gray-200 hover:text-white hover:bg-green-500/10 px-4 py-2 rounded-full transition-all">{link.name}</a> ))}
-                                
-                                <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-all border border-gray-700 ml-2 group">
-                                    <div className={`h-2 w-2 rounded-full ${statusColor}`}></div>
-                                    <Icon name="settings" size={16} className="group-hover:rotate-90 transition-transform"/>
-                                    <span className="text-xs font-bold">Configurar IA</span>
-                                </button>
+            const handleMicClick = () => {
+                if (!config.apiKey) { setResponse("⚠️ Configura tu API Key primero en el icono de engranaje."); return; }
+                if (!window.webkitSpeechRecognition && !window.SpeechRecognition) { setResponse("Navegador no soporta voz."); return; }
+                if (isListening) { setIsListening(false); return; }
 
-                                <a href="#contacto" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white border border-green-500/30 px-6 py-2 rounded-full text-sm font-bold transition-all hover:scale-105 ml-2">Contacto</a>
-                            </div>
+                window.speechSynthesis.cancel();
+                const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = 'es-ES';
+                recognition.interimResults = false;
+                recognition.continuous = false;
+
+                setIsListening(true); 
+                setTranscript("Escuchando...");
+
+                recognition.onresult = async (event) => {
+                    const text = event.results[0][0].transcript;
+                    setTranscript(`Tú: "${text}"`);
+                    setIsListening(false);
+                    
+                    setLoading(true);
+                    try {
+                        const reply = await callUnifiedAPI({ user: text, system: "Actúa como experto pedagógico conciso. Responde < 30 palabras." }, config);
+                        setResponse(reply);
+                        const u = new SpeechSynthesisUtterance(reply); u.lang = 'es-MX'; window.speechSynthesis.speak(u);
+                    } catch (e) { setResponse(e.message); }
+                    setLoading(false);
+                };
+
+                recognition.onerror = () => { setIsListening(false); setTranscript("Error de micrófono."); };
+                recognition.onend = () => setIsListening(false);
+                try { recognition.start(); } catch (e) { setIsListening(false); }
+            };
+
+            return (
+                <div className="bg-gray-900/80 border border-green-500/30 rounded-xl p-6 backdrop-blur-sm">
+                    {/* VISUAL AVATAR */}
+                    <div className="flex justify-center mb-6 animate-float">
+                         <div className="w-20 h-20 rounded-full bg-green-900/40 flex items-center justify-center border-2 border-green-500/40 shadow-[0_0_25px_rgba(74,222,128,0.3)]">
+                            <Icon name="bot" size={40} className="text-green-400" />
+                         </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center text-center space-y-4">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${isListening ? 'bg-red-500 animate-pulse shadow-[0_0_30px_rgba(239,68,68,0.6)]' : 'bg-green-600 hover:bg-green-500 shadow-[0_0_20px_rgba(22,163,74,0.4)]'}`} onClick={handleMicClick}>
+                            {isListening ? <Icon name="mic-off" size={32} className="text-white" /> : <Icon name="mic" size={32} className="text-white" />}
                         </div>
-                        <div className="xl:hidden flex items-center gap-3">
-                             <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-300 hover:text-white bg-gray-800/80 rounded-lg border border-gray-700 transition-colors relative">
-                                <Icon name="settings" size={20}/>
-                                <span className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${statusColor}`}></span>
-                             </button>
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-                                className="text-white p-2.5 rounded-lg bg-gradient-to-r from-green-600 to-teal-600 border border-green-400/30 shadow-[0_0_15px_rgba(22,163,74,0.4)] active:scale-95 transition-all"
-                            >
-                                {isMobileMenuOpen ? <Icon name="x" size={28}/> : <Icon name="menu" size={28}/>}
-                            </button>
+                        <div className="min-h-[60px]">
+                            {loading ? <span className="text-green-400 animate-pulse">Pensando ({config.provider})...</span> : <p className="text-gray-300 text-sm italic">{response}</p>}
                         </div>
+                        {transcript && <p className="text-xs text-gray-500">{transcript}</p>}
                     </div>
                 </div>
-                {isMobileMenuOpen && (
-                    <div className="absolute top-20 right-0 w-full sm:w-80 bg-black/95 border-l border-b border-green-500/30 h-[calc(100vh-5rem)] flex flex-col p-6 space-y-4">
-                        {NAV_LINKS.map(l => <a key={l.name} href={l.href} onClick={closeMenu} className="block px-4 py-3 rounded-xl text-lg font-medium text-gray-200 hover:bg-green-500/10">{l.name}</a>)}
-                        <a href="#contacto" onClick={closeMenu} className="block mt-auto px-4 py-4 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 text-center font-bold">Contacto</a>
-                    </div>
-                )}
-            </nav>
+            );
+        };
 
-            {/* HERO */}
-            <section id="inicio" className="relative min-h-screen lg:h-screen overflow-hidden pt-24 pb-12 lg:py-0 flex items-center">
-                <Vortex className="flex items-center w-full h-full px-0" containerClassName="bg-black/20" particleCount={300}>
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full flex items-center">
-                        <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
-                            <div className="space-y-8 animate-fade-in">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/60 border border-green-500/50 text-green-300 text-xs font-mono"><span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span> NUEVA GENERACIÓN EDUCATIVA</div>
-                                <h1 className="text-5xl md:text-6xl font-bold leading-tight text-white drop-shadow-lg">IA integral aplicada para <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 glow-text">docentes y escuelas</span></h1>
-                                <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
-                                <div className="flex flex-wrap gap-4 pt-2">
-                                    <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
-                                    <a href="https://gemini.google.com/share/77263494e88b" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
-                                </div>
+        const ImageEditor = ({ config }) => {
+            const [selectedImage, setSelectedImage] = useState(null);
+            const [analysis, setAnalysis] = useState("");
+            const [loading, setLoading] = useState(false);
+            const fileInputRef = useRef(null);
+
+            const handleImageUpload = (e) => {
+                if(e.target.files[0]) { 
+                    const r = new FileReader(); 
+                    r.onload = () => { setSelectedImage(r.result); setAnalysis(""); }; 
+                    r.readAsDataURL(e.target.files[0]); 
+                }
+            };
+
+            const analyzeImage = async () => {
+                if (!selectedImage) return;
+                if (!config.apiKey) { setAnalysis("⚠️ Configura tu API Key en el engranaje."); return; }
+                setLoading(true);
+                try {
+                    const mimeType = selectedImage.split(';')[0].split(':')[1];
+                    const base64Data = selectedImage.split(',')[1];
+                    const reply = await callUnifiedAPI({ 
+                        user: "Analiza este recurso educativo y da 2 tips breves.", 
+                        image: { mimeType, data: base64Data }
+                    }, config);
+                    setAnalysis(reply);
+                } catch (e) { setAnalysis(e.message); }
+                setLoading(false);
+            };
+
+            return (
+                <div className="bg-gray-900/80 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm flex flex-col h-full">
+                     {/* VISUAL SCANNER ICON */}
+                    <div className="flex justify-center mb-4">
+                         <div className="w-14 h-14 rounded-full bg-blue-900/30 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                            <Icon name="scan-eye" size={28} className="text-blue-400" />
+                         </div>
+                    </div>
+
+                    {!selectedImage ? (
+                        <div onClick={() => fileInputRef.current.click()} className="flex-grow border-2 border-dashed border-gray-600 hover:border-blue-400 rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-colors">
+                            <Icon name="upload" className="text-gray-400 mb-2" size={32} />
+                            <p className="text-sm text-gray-400 text-center">Subir imagen</p>
+                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </div>
+                    ) : (
+                        <div className="flex flex-col h-full">
+                            <div className="relative h-48 mb-4 bg-black rounded-lg overflow-hidden">
+                                <img src={selectedImage} alt="Uploaded" className="w-full h-full object-contain" />
+                                <button onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full hover:bg-red-500 text-white"><Icon name="x" size={16}/></button>
                             </div>
-                            <div className="hidden lg:block h-[500px] perspective-1000">
-                                <Card3D className="w-full h-full"><div className="absolute inset-0 bg-gradient-to-tr from-green-900/40 to-blue-900/40 rounded-2xl border border-white/10 flex flex-col items-center justify-center p-10"><div className="w-40 h-40 bg-green-500 rounded-full blur-[80px] absolute opacity-40 animate-pulse"></div><div className="relative z-10 text-6xl mb-4 animate-bounce">🚀</div><h2 className="relative z-10 text-3xl font-bold text-white">Resultados en 8 Semanas</h2><p className="relative z-10 text-gray-300 mb-8">Ahorro de 6-8 horas/semana</p><div className="w-full mt-4 relative z-10 bg-black/50 p-4 rounded-xl border border-white/10"><StatsGraph/><div className="flex justify-between text-xs text-gray-400 mt-2"><span>Semana 1</span><span className="text-green-400">Proyección</span><span>Semana 8</span></div></div></div></Card3D>
+                            {analysis ? <div className="bg-blue-900/20 p-3 rounded text-sm text-gray-200 overflow-y-auto max-h-32 border-l-2 border-blue-500">{analysis}</div> : 
+                            <button onClick={analyzeImage} disabled={loading} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold flex justify-center gap-2">{loading ? <Icon name="sparkles" className="animate-spin" size={18}/> : <Icon name="sparkles" size={18}/>} {loading ? "Analizando..." : "Analizar"}</button>}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const ChatWidget = ({ config }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [messages, setMessages] = useState([{ role: 'assistant', text: '¡Hola! Soy el asistente de Edu IA 360. ¿En qué te ayudo?' }]);
+            const [input, setInput] = useState("");
+            const messagesEndRef = useRef(null);
+            useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isOpen]);
+
+            const handleSend = async () => {
+                if (!input.trim()) return;
+                const userMsg = input; setMessages(p => [...p, { role: 'user', text: userMsg }]); setInput("");
+                try {
+                    const reply = await callUnifiedAPI({ user: userMsg, system: SITE_KNOWLEDGE }, config);
+                    setMessages(p => [...p, { role: 'assistant', text: reply }]);
+                } catch (e) { setMessages(p => [...p, { role: 'assistant', text: e.message }]); }
+            };
+
+            return (
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+                    {isOpen && (
+                        <div className="mb-4 w-80 h-96 bg-gray-900 border border-green-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+                            <div className="bg-gradient-to-r from-green-700 to-teal-700 p-4 flex justify-between items-center">
+                                <h3 className="text-white font-bold flex items-center gap-2"><Icon name="bot" size={18}/> Soporte Edu IA</h3>
+                                <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white"><Icon name="x" size={18}/></button>
+                            </div>
+                            <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-black/40 chat-scroll">
+                                {messages.map((m, i) => (
+                                    <div key={i} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            {m.role === 'assistant' && (
+                                                <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 shadow-md"><Icon name="bot" size={14} className="text-white" /></div>
+                                            )}
+                                            <div className={`max-w-[80%] p-3 rounded-lg text-sm shadow-sm ${m.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>{m.text}</div>
+                                            {m.role === 'user' && (
+                                                <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0 shadow-md"><Icon name="user-check" size={14} className="text-white" /></div>
+                                            )}
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+                            <div className="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
+                                <input className="flex-grow bg-gray-900 border border-gray-600 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500" placeholder="Escribe tu duda..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
+                                <button onClick={handleSend} className="bg-green-600 hover:bg-green-500 text-white p-2 rounded"><Icon name="send" size={18}/></button>
                             </div>
                         </div>
-                    </div>
-                </Vortex>
-            </section>
+                    )}
+                    <button onClick={() => setIsOpen(!isOpen)} className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-teal-600 shadow-lg shadow-green-500/40 flex items-center justify-center text-white hover:scale-110 transition-transform">
+                        {isOpen ? <Icon name="x" size={28} /> : <Icon name="bot" size={28} />}
+                    </button>
+                </div>
+            );
+        };
 
-            {/* PROPUESTA DE VALOR / PITCH */}
-            <section id="objetivo" className="py-24 bg-gradient-to-b from-black to-gray-900/50">
-                <div className="max-w-4xl mx-auto px-4 text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestra <span className="text-green-400">Propuesta de Valor</span></h2>
-                    
-                    <div className="bg-gray-900/40 p-8 rounded-2xl border border-green-500/20 shadow-2xl backdrop-blur-sm">
-                        <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-8">
-                            “En <span className="font-bold text-white">EduIA 360</span> ayudamos a que tu colegio en <span className="text-green-400">Querétaro y Corregidora</span> no sólo use IA, sino que la convierta en una <span className="font-bold text-white">ventaja competitiva real</span>. Implementamos proyectos de IA en el aula que se transforman en historias y evidencias para tu <span className="text-green-400">marketing y admisiones</span>, mientras cada docente trabaja con su <span className="font-bold text-white">gemelo pedagógico</span> y la dirección con un <span className="font-bold text-white">gemelo institucional</span> para tomar mejores decisiones sobre innovación, matrícula y carga académica.”
-                        </p>
-                        
-                        <a href={getWALink("Hola, me interesa convertir la IA en una ventaja competitiva para mi colegio.")} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white rounded-full font-bold text-lg shadow-[0_0_20px_rgba(22,163,74,0.4)] hover:shadow-[0_0_30px_rgba(22,163,74,0.6)] hover:scale-105 transition-all transform">
-                            Quiero potenciar mi escuela <Icon name="arrow-right" size={20}/>
+        const DemoVideo = () => {
+            const driveViewLink = "https://drive.google.com/file/d/1j35kl_u2xA5WJfSWIlM1NacqqT01X4sR/view?usp=sharing";
+            const driveEmbedLink = "https://drive.google.com/file/d/1j35kl_u2xA5WJfSWIlM1NacqqT01X4sR/preview";
+
+            return (
+                <div className="w-full max-w-5xl mx-auto mb-20 relative group px-4">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-900 border border-white/10 shadow-2xl z-10">
+                        <iframe className="w-full h-full absolute inset-0" src={driveEmbedLink} title="Demo Edu IA 360" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style={{ border: 'none' }}></iframe>
+                    </div>
+                    <div className="text-center mt-6 flex flex-col items-center gap-3 animate-fade-in">
+                        <p className="text-sm text-gray-400">¿No carga? Drive requiere cookies.</p>
+                        <a href={driveViewLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-base font-bold text-white bg-green-600 hover:bg-green-500 px-8 py-3 rounded-full shadow-lg shadow-green-500/20 transition-all hover:scale-105 border border-green-400/50">
+                            <Icon name="play" size={18} fill="currentColor" /> Ver en Drive
                         </a>
                     </div>
-
-                    <BackToTop />
                 </div>
-            </section>
+            );
+        };
 
-            {/* BENEFICIOS */}
-            <section id="beneficios" className="py-20 border-t border-white/5">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Beneficios <span className="text-green-400">Clave</span></h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            { title: "Ahorro de tiempo", desc: "Ahorra 6-8 horas/semana en planeación, rúbricas y retroalimentación.", icon: "hourglass", color: "green" },
-                            { title: "Mayor participación", desc: "Incrementa la participación con prompts activos y evaluación formativa.", icon: "user-check", color: "blue" },
-                            { title: "Integración sistematizada", desc: "Plantillas listas y acompañamiento por cohortes.", icon: "settings", color: "purple" },
-                            { title: "Evidencias de impacto", desc: "Tiempo ahorrado, participación y resultados de aprendizaje.", icon: "bar-chart-2", color: "yellow" },
-                            { title: "Ética y privacidad", desc: "Lineamientos claros y uso responsable de datos.", icon: "shield", color: "red" },
-                            { title: "Acompañamiento 100%", desc: "Personalizado y con indicadores clave de desempeño.", icon: "heart-handshake", color: "teal" }
-                        ].map((item, idx) => (
-                            <Card3D key={idx} className="h-full">
-                                <div className={`bg-gray-900/50 backdrop-blur-md p-8 rounded-xl h-full border-t-4 border-${item.color}-500 hover:bg-gray-800 transition-all border border-white/5 hover:border-white/20 shadow-lg`}>
-                                    <div className="text-4xl mb-4"><Icon name={item.icon} size={40}/></div>
-                                    <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-                                    <p className="text-gray-400">{item.desc}</p>
+        const TestimonialCarousel = () => {
+            const testimonials = [
+                { initial: "WB", name: "Lic. Wendy Barroso", role: "Asoc. Mexicana Éxito PYME", quote: "Su curso de IA ha sido una experiencia enriquecedora. Gracias por compartir conocimientos de manera tan didáctica y accesible.", color: "bg-green-600" },
+                { initial: "CG", name: "Mtra. Carol G.", role: "Educación Básica", quote: "Ahora puedo enfocarme más en la enseñanza y menos en la preparación. La IA me ayudó a crear recursos en tiempo récord.", color: "bg-blue-600" },
+                { initial: "EC", name: "Doctorante Esmeralda Cofradía", role: "Profesionista", quote: "Me encanta la clase de Edu IA 360. Combina teoría, práctica y herramientas de suma utilidad para las actividades de mi profesión.", color: "bg-pink-600" },
+                { initial: "AR", name: "Mtra. Anabel Rodríguez", role: "Director Académico", quote: "Incorporamos la IA en la curricula del nivel de Maestría en nuestro Centro educativo...", color: "bg-purple-600" },
+                { initial: "AB", name: "Mtro. Antonio Betancourt", role: "UPN", quote: "Agradecemos su participación como facilitador del taller 'Uso ético y estratégico de la IA en la investigación' en el Foro Académico 2025.", color: "bg-orange-600" },
+                { initial: "BR", name: "Mtra. Brenda Rivera", role: "Educación Básica", quote: "Recuperé 7 horas semanales y mejoré mis estrategias didácticas.", color: "bg-teal-600" },
+                { initial: "CG", name: "Mtra. Claudia González", role: "EBC Querétaro", quote: "Aplicación práctica en mis clases y proyectos personales.", color: "bg-indigo-600" }
+            ];
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isPaused, setIsPaused] = useState(false);
+            useEffect(() => {
+                if (isPaused) return;
+                const interval = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % testimonials.length); }, 5000);
+                return () => clearInterval(interval);
+            }, [isPaused, testimonials.length]);
+            const prevSlide = () => { setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1)); };
+            const nextSlide = () => { setCurrentIndex((prev) => (prev + 1) % testimonials.length); };
+            return (
+                <div className="relative w-full max-w-4xl mx-auto" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
+                    <div className="overflow-hidden relative min-h-[250px] flex items-center justify-center">
+                        {testimonials.map((t, idx) => {
+                            let position = 'opacity-0 translate-x-full pointer-events-none absolute'; 
+                            if (idx === currentIndex) position = 'opacity-100 translate-x-0 z-10 relative';
+                            else if (idx === (currentIndex - 1 + testimonials.length) % testimonials.length) position = 'opacity-0 -translate-x-full absolute'; 
+                            return (
+                                <div key={idx} className={`transition-all duration-500 ease-in-out w-full md:w-3/4 lg:w-2/3 ${position}`}>
+                                    <div className="bg-gray-900/60 p-8 rounded-2xl border border-gray-700 backdrop-blur-sm shadow-2xl">
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className={`w-16 h-16 ${t.color} rounded-full flex items-center justify-center text-white font-bold text-xl mb-4 shadow-lg shadow-white/10 border border-white/10`}>{t.initial}</div>
+                                            <p className="italic text-gray-200 text-lg mb-6">"{t.quote}"</p>
+                                            <div><p className="font-bold text-white text-lg">{t.name}</p><p className="text-sm text-green-400 font-mono">{t.role}</p></div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </Card3D>
+                            );
+                        })}
+                    </div>
+                    <button onClick={prevSlide} className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-green-600 text-white p-3 rounded-full border border-white/10 backdrop-blur-md transition-all z-20 hover:scale-110" aria-label="Anterior"><Icon name="chevron-left" size={24} /></button>
+                    <button onClick={nextSlide} className="absolute right-0 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-green-600 text-white p-3 rounded-full border border-white/10 backdrop-blur-md transition-all z-20 hover:scale-110" aria-label="Siguiente"><Icon name="chevron-right" size={24} /></button>
+                    <div className="flex justify-center gap-3 mt-6">
+                        {testimonials.map((_, idx) => (
+                            <button key={idx} onClick={() => setCurrentIndex(idx)} className={`w-3 h-3 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-green-500 w-8' : 'bg-gray-600 hover:bg-gray-400'}`} aria-label={`Ir al testimonio ${idx + 1}`} />
                         ))}
                     </div>
-                    <BackToTop />
                 </div>
-            </section>
+            );
+        };
 
-            {/* METODOLOGÍA */}
-            <section id="metodologia" className="py-24 bg-black relative overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">Cómo funciona <span className="text-blue-400">(3 pasos)</span></h2>
-                    <div className="relative grid md:grid-cols-3 gap-12">
-                        <div className="absolute top-12 left-0 w-full h-1 bg-gradient-to-r from-green-900 via-blue-900 to-green-900 hidden md:block -z-10 opacity-50"></div>
-                        {[
-                            { num: "01", title: "Diagnóstico estratégico", desc: "Para mapear el currículo y definir objetivos." },
-                            { num: "02", title: "Co-diseño aplicado", desc: "Prompts, plantillas y rúbricas por materia." },
-                            { num: "03", title: "Acompañamiento", desc: "Sesiones prácticas y optimización mensual." }
-                        ].map((step, idx) => (
-                            <div key={idx} className="relative group text-center">
-                                <div className="w-24 h-24 mx-auto bg-black border-2 border-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-green-400 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(74,222,128,0.3)] relative z-10">{step.num}</div>
-                                <div className="p-4 rounded-lg group-hover:bg-white/5 transition-colors"><h3 className="text-xl font-bold text-white mb-2">{step.title}</h3><p className="text-gray-400">{step.desc}</p></div>
+        // --- APP PRINCIPAL ---
+        const App = () => {
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
+            
+            const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
+            const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+            const closeMenu = () => setIsMobileMenuOpen(false);
+
+            useEffect(() => {
+                const saved = localStorage.getItem('eduia360_config');
+                if (saved) {
+                    try {
+                        setApiConfig(JSON.parse(saved));
+                    } catch (e) {
+                        console.error("Error parsing saved config", e);
+                    }
+                }
+            }, []);
+
+            const handleSaveSettings = (newConfig) => {
+                setApiConfig(newConfig);
+                localStorage.setItem('eduia360_config', JSON.stringify(newConfig));
+            };
+
+            const isConnected = !!apiConfig.apiKey;
+            const statusColor = isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+
+            return (
+                <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
+                    <QuantumBackground />
+                    <ChatWidget config={apiConfig} />
+                    <SettingsModal 
+                        isOpen={isSettingsOpen} 
+                        onClose={() => setIsSettingsOpen(false)} 
+                        config={apiConfig}
+                        onSave={handleSaveSettings} 
+                    />
+                    
+                    {/* NAV */}
+                    <nav className="fixed top-0 w-full z-40 border-b border-white/5 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-20">
+                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+                                    <div className="relative w-10 h-10"><div className="absolute inset-0 bg-gradient-to-br from-green-400 to-blue-600 rounded-full opacity-80 blur-[2px] animate-pulse"></div><div className="absolute inset-1 bg-black rounded-full flex items-center justify-center"><span className="text-lg">🌐</span></div></div>
+                                    <span className="text-xl font-bold tracking-tighter text-white">Edu IA <span className="text-green-400">360°</span></span>
+                                </div>
+                                <div className="hidden xl:flex items-center">
+                                    <div className="flex items-baseline space-x-4 items-center">
+                                        {NAV_LINKS.map((link) => ( <a key={link.name} href={link.href} className="text-sm font-medium text-gray-200 hover:text-white hover:bg-green-500/10 px-4 py-2 rounded-full transition-all">{link.name}</a> ))}
+                                        
+                                        <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-all border border-gray-700 ml-2 group">
+                                            <div className={`h-2 w-2 rounded-full ${statusColor}`}></div>
+                                            <Icon name="settings" size={16} className="group-hover:rotate-90 transition-transform"/>
+                                            <span className="text-xs font-bold">Configurar IA</span>
+                                        </button>
+
+                                        <a href="#contacto" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white border border-green-500/30 px-6 py-2 rounded-full text-sm font-bold transition-all hover:scale-105 ml-2">Contacto</a>
+                                    </div>
+                                </div>
+                                <div className="xl:hidden flex items-center gap-3">
+                                     <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-300 hover:text-white bg-gray-800/80 rounded-lg border border-gray-700 transition-colors relative">
+                                        <Icon name="settings" size={20}/>
+                                        <span className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${statusColor}`}></span>
+                                     </button>
+                                    <button 
+                                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                                        className="text-white p-2.5 rounded-lg bg-gradient-to-r from-green-600 to-teal-600 border border-green-400/30 shadow-[0_0_15px_rgba(22,163,74,0.4)] active:scale-95 transition-all"
+                                    >
+                                        {isMobileMenuOpen ? <Icon name="x" size={28}/> : <Icon name="menu" size={28}/>}
+                                    </button>
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                    <BackToTop />
-                </div>
-            </section>
-
-            {/* PLANES / BUYER PERSONAS */}
-            <section id="planes" className="py-24 border-t border-white/5 bg-gradient-to-b from-black to-green-900/10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-white mb-4">Soluciones por <span className="text-green-400">Perfil</span></h2>
-                        <p className="text-gray-400 mb-6 max-w-2xl mx-auto">Propuestas diseñadas específicamente para las necesidades de cada rol en tu colegio.</p>
-                        <div className="inline-block max-w-2xl mx-auto bg-green-900/20 border border-green-500/30 rounded-lg px-6 py-3 backdrop-blur-sm">
-                            <p className="text-sm text-green-200/90 italic flex gap-2 items-start justify-center text-left md:text-center"><span className="mt-1"><Icon name="sparkles" size={14} className="text-green-400 flex-shrink-0"/></span> Nota: Las propuestas son flexibles y se pueden generar otras en función de las necesidades y/o requerimientos de los docentes y escuelas.</p>
                         </div>
-                    </div>
+                        {isMobileMenuOpen && (
+                            <div className="absolute top-20 right-0 w-full sm:w-80 bg-black/95 border-l border-b border-green-500/30 h-[calc(100vh-5rem)] flex flex-col p-6 space-y-4">
+                                {NAV_LINKS.map(l => <a key={l.name} href={l.href} onClick={closeMenu} className="block px-4 py-3 rounded-xl text-lg font-medium text-gray-200 hover:bg-green-500/10">{l.name}</a>)}
+                                <a href="#contacto" onClick={closeMenu} className="block mt-auto px-4 py-4 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 text-center font-bold">Contacto</a>
+                            </div>
+                        )}
+                    </nav>
 
-                    <div className="grid md:grid-cols-2 gap-8">
-                        {/* 1. Directores Generales */}
-                        <Card3D className="h-full">
-                            <div className="bg-black/60 p-8 rounded-2xl h-full border border-yellow-500/30 flex flex-col hover:border-yellow-500/60 transition-all shadow-lg hover:shadow-yellow-500/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-yellow-500/20"></div>
-                                
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div className="p-3 rounded-lg bg-yellow-500/20 text-yellow-400"><Icon name="crown" size={24}/></div>
-                                    <span className="text-yellow-400 text-sm font-bold tracking-wider uppercase">Directores Generales y Propietarios</span>
+                    {/* HERO */}
+                    <section id="inicio" className="relative min-h-screen lg:h-screen overflow-hidden pt-24 pb-12 lg:py-0 flex items-center">
+                        <Vortex className="flex items-center w-full h-full px-0" containerClassName="bg-black/20" particleCount={300}>
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full flex items-center">
+                                <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
+                                    <div className="space-y-8 animate-fade-in">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/60 border border-green-500/50 text-green-300 text-xs font-mono"><span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span> NUEVA GENERACIÓN EDUCATIVA</div>
+                                        <h1 className="text-5xl md:text-6xl font-bold leading-tight text-white drop-shadow-lg">IA integral aplicada para <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 glow-text">docentes y escuelas</span></h1>
+                                        <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
+                                        <div className="flex flex-wrap gap-4 pt-2">
+                                            <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
+                                            <a href="https://gemini.google.com/share/77263494e88b" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
+                                        </div>
+                                    </div>
+                                    <div className="hidden lg:block h-[500px] perspective-1000">
+                                        <Card3D className="w-full h-full"><div className="absolute inset-0 bg-gradient-to-tr from-green-900/40 to-blue-900/40 rounded-2xl border border-white/10 flex flex-col items-center justify-center p-10"><div className="w-40 h-40 bg-green-500 rounded-full blur-[80px] absolute opacity-40 animate-pulse"></div><div className="relative z-10 text-6xl mb-4 animate-bounce">🚀</div><h2 className="relative z-10 text-3xl font-bold text-white">Resultados en 8 Semanas</h2><p className="relative z-10 text-gray-300 mb-8">Ahorro de 6-8 horas/semana</p><div className="w-full mt-4 relative z-10 bg-black/50 p-4 rounded-xl border border-white/10"><StatsGraph/><div className="flex justify-between text-xs text-gray-400 mt-2"><span>Semana 1</span><span className="text-green-400">Proyección</span><span>Semana 8</span></div></div></div></Card3D>
+                                    </div>
                                 </div>
-                                
-                                <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Convierte la IA en ventaja competitiva</h3>
-                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Diferénciate en Querétaro con proyectos visibles, evidencias medibles y una narrativa de innovación ética que fortalece matrícula y reputación.</p>
-                                
-                                <div className="space-y-3 mb-8 flex-grow">
-                                    <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
-                                    {[
-                                        "Portafolio institucional de proyectos de IA (Open House).",
-                                        "Reportes ejecutivos con métricas para consejo directivo.",
-                                        "Kit de comunicación para padres (uso seguro y ético).",
-                                        "Gemelo institucional para simular escenarios estratégicos."
-                                    ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-yellow-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
-                                </div>
-                                
-                                <div className="bg-yellow-500/5 p-4 rounded-lg border border-yellow-500/10 mb-6">
-                                    <p className="text-xs text-yellow-200/80 italic"><strong className="text-yellow-400">Resultado:</strong> Tu colegio se posiciona como referente de innovación, atrayendo familias comprometidas.</p>
-                                </div>
+                            </div>
+                        </Vortex>
+                    </section>
 
-                                <a href={getWALink("Hola, soy Director/Propietario y quiero un diagnóstico sin costo.")} target="_blank" rel="noreferrer" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-yellow-600/80 to-yellow-500/80 hover:from-yellow-500 hover:to-yellow-400 text-white font-bold border border-yellow-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
-                                    Agenda tu diagnóstico sin costo
+                    {/* PROPUESTA DE VALOR / PITCH */}
+                    <section id="objetivo" className="py-24 bg-gradient-to-b from-black to-gray-900/50">
+                        <div className="max-w-4xl mx-auto px-4 text-center">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestra <span className="text-green-400">Propuesta de Valor</span></h2>
+                            
+                            <div className="bg-gray-900/40 p-8 rounded-2xl border border-green-500/20 shadow-2xl backdrop-blur-sm">
+                                <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-8">
+                                    “En <span className="font-bold text-white">EduIA 360</span> ayudamos a que tu colegio en <span className="text-green-400">Querétaro y Corregidora</span> no sólo use IA, sino que la convierta en una <span className="font-bold text-white">ventaja competitiva real</span>. Implementamos proyectos de IA en el aula que se transforman en historias y evidencias para tu <span className="text-green-400">marketing y admisiones</span>, mientras cada docente trabaja con su <span className="font-bold text-white">gemelo pedagógico</span> y la dirección con un <span className="font-bold text-white">gemelo institucional</span> para tomar mejores decisiones sobre innovación, matrícula y carga académica.”
+                                </p>
+                                
+                                <a href={getWALink("Hola, me interesa convertir la IA en una ventaja competitiva para mi colegio.")} target="_blank" className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white rounded-full font-bold text-lg shadow-[0_0_20px_rgba(22,163,74,0.4)] hover:shadow-[0_0_30px_rgba(22,163,74,0.6)] hover:scale-105 transition-all transform">
+                                    Quiero potenciar mi escuela <Icon name="arrow-right" size={20}/>
                                 </a>
                             </div>
-                        </Card3D>
 
-                        {/* 2. Directores Académicos */}
-                        <Card3D className="h-full">
-                            <div className="bg-black/60 p-8 rounded-2xl h-full border border-blue-500/30 flex flex-col hover:border-blue-500/60 transition-all shadow-lg hover:shadow-blue-500/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-500/20"></div>
-                                
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div className="p-3 rounded-lg bg-blue-500/20 text-blue-400"><Icon name="book-open" size={24}/></div>
-                                    <span className="text-blue-400 text-sm font-bold tracking-wider uppercase">Académicos y Coordinadores</span>
-                                </div>
-                                
-                                <h3 className="text-2xl font-bold text-white mb-3 leading-tight">IA integrada al currículo con acompañamiento</h3>
-                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Eleva la calidad de la práctica docente sin resistencias, con un modelo de gemelos pedagógicos personalizados y co-diseño por materia.</p>
-                                
-                                <div className="space-y-3 mb-8 flex-grow">
-                                    <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
-                                    {[
-                                        "Co-diseño curricular: prompts y rúbricas alineadas a tu modelo.",
-                                        "Gemelo pedagógico para cada docente (ahorro 6-8h/sem).",
-                                        "Ciclos de mentoría pedagógica con acompañamiento experto.",
-                                        "Métricas de impacto por docente y por nivel."
-                                    ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-blue-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
-                                </div>
-                                
-                                <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/10 mb-6">
-                                    <p className="text-xs text-blue-200/80 italic"><strong className="text-blue-400">Resultado:</strong> Un equipo docente actualizado, con herramientas que mejoran la enseñanza y generan evidencias.</p>
-                                </div>
-
-                                <a href={getWALink("Hola, soy Coordinador Académico y quiero una propuesta personalizada.")} target="_blank" rel="noreferrer" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-blue-600/80 to-blue-500/80 hover:from-blue-500 hover:to-blue-400 text-white font-bold border border-blue-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
-                                    Solicita una propuesta personalizada
-                                </a>
-                            </div>
-                        </Card3D>
-
-                        {/* 3. Marketing */}
-                        <Card3D className="h-full">
-                            <div className="bg-black/60 p-8 rounded-2xl h-full border border-pink-500/30 flex flex-col hover:border-pink-500/60 transition-all shadow-lg hover:shadow-pink-500/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-pink-500/20"></div>
-                                
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div className="p-3 rounded-lg bg-pink-500/20 text-pink-400"><Icon name="megaphone" size={24}/></div>
-                                    <span className="text-pink-400 text-sm font-bold tracking-wider uppercase">Marketing y Admisiones</span>
-                                </div>
-                                
-                                <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Contenido auténtico para captar alumnos</h3>
-                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Transforma la innovación interna en historias, proyectos y testimonios que llenan tu calendario de contenidos y fortalecen tu embudo.</p>
-                                
-                                <div className="space-y-3 mb-8 flex-grow">
-                                    <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
-                                    {[
-                                        "Portafolio de proyectos documentados (fotos, videos, historias).",
-                                        "Banco de testimonios de docentes y estudiantes.",
-                                        "Calendario editorial basado en evidencias del aula.",
-                                        "Mensajes clave diferenciados para recorridos y campañas."
-                                    ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-pink-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
-                                </div>
-                                
-                                <div className="bg-pink-500/5 p-4 rounded-lg border border-pink-500/10 mb-6">
-                                    <p className="text-xs text-pink-200/80 italic"><strong className="text-pink-400">Resultado:</strong> Aumento en conversión de inscripciones y percepción clara de innovación.</p>
-                                </div>
-
-                                <a href={getWALink("Hola, soy de Marketing y quiero generar contenido de IA.")} target="_blank" rel="noreferrer" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-pink-600/80 to-pink-500/80 hover:from-pink-500 hover:to-pink-400 text-white font-bold border border-pink-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
-                                    Empieza a generar contenido ahora
-                                </a>
-                            </div>
-                        </Card3D>
-
-                        {/* 4. Docentes */}
-                        <Card3D className="h-full">
-                            <div className="bg-black/60 p-8 rounded-2xl h-full border border-green-500/30 flex flex-col hover:border-green-500/60 transition-all shadow-lg hover:shadow-green-500/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-500/20"></div>
-                                
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div className="p-3 rounded-lg bg-green-500/20 text-green-400"><Icon name="bot" size={24}/></div>
-                                    <span className="text-green-400 text-sm font-bold tracking-wider uppercase">Docentes (Líderes)</span>
-                                </div>
-                                
-                                <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Tu asistente IA que respeta tu estilo</h3>
-                                <p className="text-gray-400 text-sm mb-6 leading-relaxed">Crea tu gemelo pedagógico personalizado y conviértete en referente de innovación en tu colegio, sin tecnicismos ni pérdida del toque humano.</p>
-                                
-                                <div className="space-y-3 mb-8 flex-grow">
-                                    <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
-                                    {[
-                                        "Gemelo pedagógico entrenado con tus planeaciones.",
-                                        "Acompañamiento cercano por cohortes (sesiones prácticas).",
-                                        "Certificación como 'Embajador IA' de tu colegio.",
-                                        "Comunidad local de docentes pioneros para compartir casos."
-                                    ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-green-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
-                                </div>
-                                
-                                <div className="bg-green-500/5 p-4 rounded-lg border border-green-500/10 mb-6">
-                                    <p className="text-xs text-green-200/80 italic"><strong className="text-green-400">Resultado:</strong> Recuperas horas de trabajo, mejoras estrategias y te posicionas como líder.</p>
-                                </div>
-
-                                <a href={getWALink("Hola, soy Docente y quiero probar mi gemelo IA.")} target="_blank" rel="noreferrer" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-green-600/80 to-green-500/80 hover:from-green-500 hover:to-green-400 text-white font-bold border border-green-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
-                                    Quiero probar mi gemelo IA
-                                </a>
-                            </div>
-                        </Card3D>
-                    </div>
-                    <BackToTop />
-                </div>
-            </section>
-
-            {/* RECURSOS */}
-            <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30">
-                <div className="max-w-7xl mx-auto px-4 text-center mb-12">
-                    <h2 className="text-4xl font-bold mb-4">Recursos <span className="text-green-400">Valor</span></h2>
-                    <div className="grid md:grid-cols-3 gap-6 mt-8">
-                        {[
-                            {i:"hourglass",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},
-                            {i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},
-                            {i:"crown",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}
-                        ].map((r,i)=><div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group"><div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div><h3 className="text-xl font-bold mb-2">{r.t}</h3><a href={r.u} target="_blank" rel="noreferrer" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a></div>)}
-                    </div>
-                    <BackToTop/>
-                </div>
-            </section>
-
-            {/* HERRAMIENTAS */}
-            <section id="herramientas" className="py-20 bg-black/30 relative">
-                <div className="max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div>
-                    <div className="grid lg:grid-cols-2 gap-10">
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div>
-                            <LiveVoiceAgent config={apiConfig} />
+                            <BackToTop />
                         </div>
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="upload"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div>
-                            <ImageEditor config={apiConfig} />
+                    </section>
+
+                    {/* BENEFICIOS */}
+                    <section id="beneficios" className="py-20 border-t border-white/5">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Beneficios <span className="text-green-400">Clave</span></h2>
+                            <div className="grid md:grid-cols-3 gap-8">
+                                {[
+                                    { title: "Ahorro de tiempo", desc: "Ahorra 6-8 horas/semana en planeación, rúbricas y retroalimentación.", icon: "hourglass", color: "green" },
+                                    { title: "Mayor participación", desc: "Incrementa la participación con prompts activos y evaluación formativa.", icon: "user-check", color: "blue" },
+                                    { title: "Integración sistematizada", desc: "Plantillas listas y acompañamiento por cohortes.", icon: "settings", color: "purple" },
+                                    { title: "Evidencias de impacto", desc: "Tiempo ahorrado, participación y resultados de aprendizaje.", icon: "bar-chart-2", color: "yellow" },
+                                    { title: "Ética y privacidad", desc: "Lineamientos claros y uso responsable de datos.", icon: "shield", color: "red" },
+                                    { title: "Acompañamiento 100%", desc: "Personalizado y con indicadores clave de desempeño.", icon: "heart-handshake", color: "teal" }
+                                ].map((item, idx) => (
+                                    <Card3D key={idx} className="h-full">
+                                        <div className={`bg-gray-900/50 backdrop-blur-md p-8 rounded-xl h-full border-t-4 border-${item.color}-500 hover:bg-gray-800 transition-all border border-white/5 hover:border-white/20 shadow-lg`}>
+                                            <div className="text-4xl mb-4"><Icon name={item.icon} size={40}/></div>
+                                            <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                                            <p className="text-gray-400">{item.desc}</p>
+                                        </div>
+                                    </Card3D>
+                                ))}
+                            </div>
+                            <BackToTop />
                         </div>
-                    </div>
-                    <BackToTop/>
-                </div>
-            </section>
+                    </section>
 
-            {/* CASOS */}
-            <section id="testimonios" className="py-20">
-                <div className="max-w-7xl mx-auto px-4">
-                    <h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2>
-                    <div className="text-center mb-12"><a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline"><Icon name="play" size={16}/> Ver Casos (Demo 5 min)</a></div>
-                    <DemoVideo/>
-                    <TestimonialCarousel/>
-                    <BackToTop/>
-                </div>
-            </section>
+                    {/* METODOLOGÍA */}
+                    <section id="metodologia" className="py-24 bg-black relative overflow-hidden">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">Cómo funciona <span className="text-blue-400">(3 pasos)</span></h2>
+                            <div className="relative grid md:grid-cols-3 gap-12">
+                                <div className="absolute top-12 left-0 w-full h-1 bg-gradient-to-r from-green-900 via-blue-900 to-green-900 hidden md:block -z-10 opacity-50"></div>
+                                {[
+                                    { num: "01", title: "Diagnóstico estratégico", desc: "Para mapear el currículo y definir objetivos." },
+                                    { num: "02", title: "Co-diseño aplicado", desc: "Prompts, plantillas y rúbricas por materia." },
+                                    { num: "03", title: "Acompañamiento", desc: "Sesiones prácticas y optimización mensual." }
+                                ].map((step, idx) => (
+                                    <div key={idx} className="relative group text-center">
+                                        <div className="w-24 h-24 mx-auto bg-black border-2 border-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-green-400 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(74,222,128,0.3)] relative z-10">{step.num}</div>
+                                        <div className="p-4 rounded-lg group-hover:bg-white/5 transition-colors"><h3 className="text-xl font-bold text-white mb-2">{step.title}</h3><p className="text-gray-400">{step.desc}</p></div>
+                                    </div>
+                                ))}
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
 
-            <section className="relative h-[500px]">
-                <Vortex className="flex items-center flex-col justify-center px-4 w-full h-full" containerClassName="bg-black">
-                    <h2 className="text-white text-4xl font-bold text-center">¿Listo para transformar tu escuela?</h2>
-                    <div className="flex gap-4 mt-8"><a href={getWALink("Hola, quiero unirme.")} target="_blank" rel="noreferrer" className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-full font-bold text-white shadow-lg">Comenzar ahora</a></div>
-                </Vortex>
-            </section>
+                    {/* PLANES / BUYER PERSONAS */}
+                    <section id="planes" className="py-24 border-t border-white/5 bg-gradient-to-b from-black to-green-900/10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl font-bold text-white mb-4">Soluciones por <span className="text-green-400">Perfil</span></h2>
+                                <p className="text-gray-400 mb-6 max-w-2xl mx-auto">Propuestas diseñadas específicamente para las necesidades de cada rol en tu colegio.</p>
+                                <div className="inline-block max-w-2xl mx-auto bg-green-900/20 border border-green-500/30 rounded-lg px-6 py-3 backdrop-blur-sm">
+                                    <p className="text-sm text-green-200/90 italic flex gap-2 items-start justify-center text-left md:text-center"><span className="mt-1"><Icon name="sparkles" size={14} className="text-green-400 flex-shrink-0"/></span> Nota: Las propuestas son flexibles y se pueden generar otras en función de las necesidades y/o requerimientos de los docentes y escuelas.</p>
+                                </div>
+                            </div>
 
-            {/* FOOTER */}
-            <footer id="contacto" className="bg-black py-12 border-t border-white/10 text-sm">
-                <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8 text-gray-400">
-                    <div className="col-span-2"><span className="text-2xl font-bold text-white">Edu IA <span className="text-green-400">360°</span></span><p>Transformando la educación.</p></div>
-                    <div><h4 className="text-white font-bold mb-4">Enlaces</h4><ul className="space-y-2">{NAV_LINKS.slice(0,5).map(l=><li key={l.name}><a href={l.href} className="hover:text-green-400">{l.name}</a></li>)}</ul></div>
-                    <div><h4 className="text-white font-bold mb-4">Contacto</h4><ul className="space-y-2"><li>consultora@eduia360.com</li><li><a href={getWALink("Duda")} target="_blank" rel="noreferrer" className="hover:text-green-400 flex gap-2"><Icon name="phone" size={14}/> +52 461 182 4875</a></li></ul></div>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {/* 1. Directores Generales */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-yellow-500/30 flex flex-col hover:border-yellow-500/60 transition-all shadow-lg hover:shadow-yellow-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-yellow-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-yellow-500/20 text-yellow-400"><Icon name="crown" size={24}/></div>
+                                            <span className="text-yellow-400 text-sm font-bold tracking-wider uppercase">Directores Generales y Propietarios</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Convierte la IA en ventaja competitiva</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Diferénciate en Querétaro con proyectos visibles, evidencias medibles y una narrativa de innovación ética que fortalece matrícula y reputación.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Portafolio institucional de proyectos de IA (Open House).",
+                                                "Reportes ejecutivos con métricas para consejo directivo.",
+                                                "Kit de comunicación para padres (uso seguro y ético).",
+                                                "Gemelo institucional para simular escenarios estratégicos."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-yellow-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-yellow-500/5 p-4 rounded-lg border border-yellow-500/10 mb-6">
+                                            <p className="text-xs text-yellow-200/80 italic"><strong className="text-yellow-400">Resultado:</strong> Tu colegio se posiciona como referente de innovación, atrayendo familias comprometidas.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy Director/Propietario y quiero un diagnóstico sin costo.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-yellow-600/80 to-yellow-500/80 hover:from-yellow-500 hover:to-yellow-400 text-white font-bold border border-yellow-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Agenda tu diagnóstico sin costo
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                                {/* 2. Directores Académicos */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-blue-500/30 flex flex-col hover:border-blue-500/60 transition-all shadow-lg hover:shadow-blue-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-blue-500/20 text-blue-400"><Icon name="book-open" size={24}/></div>
+                                            <span className="text-blue-400 text-sm font-bold tracking-wider uppercase">Académicos y Coordinadores</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">IA integrada al currículo con acompañamiento</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Eleva la calidad de la práctica docente sin resistencias, con un modelo de gemelos pedagógicos personalizados y co-diseño por materia.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Co-diseño curricular: prompts y rúbricas alineadas a tu modelo.",
+                                                "Gemelo pedagógico para cada docente (ahorro 6-8h/sem).",
+                                                "Ciclos de mentoría pedagógica con acompañamiento experto.",
+                                                "Métricas de impacto por docente y por nivel."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-blue-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/10 mb-6">
+                                            <p className="text-xs text-blue-200/80 italic"><strong className="text-blue-400">Resultado:</strong> Un equipo docente actualizado, con herramientas que mejoran la enseñanza y generan evidencias.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy Coordinador Académico y quiero una propuesta personalizada.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-blue-600/80 to-blue-500/80 hover:from-blue-500 hover:to-blue-400 text-white font-bold border border-blue-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Solicita una propuesta personalizada
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                                {/* 3. Marketing */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-pink-500/30 flex flex-col hover:border-pink-500/60 transition-all shadow-lg hover:shadow-pink-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-pink-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-pink-500/20 text-pink-400"><Icon name="megaphone" size={24}/></div>
+                                            <span className="text-pink-400 text-sm font-bold tracking-wider uppercase">Marketing y Admisiones</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Contenido auténtico para captar alumnos</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Transforma la innovación interna en historias, proyectos y testimonios que llenan tu calendario de contenidos y fortalecen tu embudo.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Portafolio de proyectos documentados (fotos, videos, historias).",
+                                                "Banco de testimonios de docentes y estudiantes.",
+                                                "Calendario editorial basado en evidencias del aula.",
+                                                "Mensajes clave diferenciados para recorridos y campañas."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-pink-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-pink-500/5 p-4 rounded-lg border border-pink-500/10 mb-6">
+                                            <p className="text-xs text-pink-200/80 italic"><strong className="text-pink-400">Resultado:</strong> Aumento en conversión de inscripciones y percepción clara de innovación.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy de Marketing y quiero generar contenido de IA.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-pink-600/80 to-pink-500/80 hover:from-pink-500 hover:to-pink-400 text-white font-bold border border-pink-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Empieza a generar contenido ahora
+                                        </a>
+                                    </div>
+                                </Card3D>
+
+                                {/* 4. Docentes */}
+                                <Card3D className="h-full">
+                                    <div className="bg-black/60 p-8 rounded-2xl h-full border border-green-500/30 flex flex-col hover:border-green-500/60 transition-all shadow-lg hover:shadow-green-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-500/20"></div>
+                                        
+                                        <div className="mb-6 flex items-center gap-3">
+                                            <div className="p-3 rounded-lg bg-green-500/20 text-green-400"><Icon name="bot" size={24}/></div>
+                                            <span className="text-green-400 text-sm font-bold tracking-wider uppercase">Docentes (Líderes)</span>
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-bold text-white mb-3 leading-tight">Tu asistente IA que respeta tu estilo</h3>
+                                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">Crea tu gemelo pedagógico personalizado y conviértete en referente de innovación en tu colegio, sin tecnicismos ni pérdida del toque humano.</p>
+                                        
+                                        <div className="space-y-3 mb-8 flex-grow">
+                                            <p className="text-xs font-bold text-gray-500 uppercase">Lo que obtienes:</p>
+                                            {[
+                                                "Gemelo pedagógico entrenado con tus planeaciones.",
+                                                "Acompañamiento cercano por cohortes (sesiones prácticas).",
+                                                "Certificación como 'Embajador IA' de tu colegio.",
+                                                "Comunidad local de docentes pioneros para compartir casos."
+                                            ].map((f,i)=><li key={i} className="flex gap-3 text-sm text-gray-300 items-start"><span className="mt-1 text-green-500 flex-shrink-0"><Icon name="check" size={14}/></span> {f}</li>)}
+                                        </div>
+                                        
+                                        <div className="bg-green-500/5 p-4 rounded-lg border border-green-500/10 mb-6">
+                                            <p className="text-xs text-green-200/80 italic"><strong className="text-green-400">Resultado:</strong> Recuperas horas de trabajo, mejoras estrategias y te posicionas como líder.</p>
+                                        </div>
+
+                                        <a href={getWALink("Hola, soy Docente y quiero probar mi gemelo IA.")} target="_blank" className="w-full py-4 text-center rounded-xl bg-gradient-to-r from-green-600/80 to-green-500/80 hover:from-green-500 hover:to-green-400 text-white font-bold border border-green-400/20 shadow-lg transition-all transform hover:scale-[1.02]">
+                                            Quiero probar mi gemelo IA
+                                        </a>
+                                    </div>
+                                </Card3D>
+                            </div>
+                            <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* RECURSOS */}
+                    <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30"><div className="max-w-7xl mx-auto px-4 text-center mb-12"><h2 className="text-4xl font-bold mb-4">Recursos <span className="text-green-400">Valor</span></h2><div className="grid md:grid-cols-3 gap-6 mt-8">{[{i:"file-text",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},{i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},{i:"compass",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}].map((r,i)=><div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group"><div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div><h3 className="text-xl font-bold mb-2">{r.t}</h3><a href={r.u} target="_blank" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a></div>)}</div><BackToTop/></div></section>
+
+                    <section id="herramientas" className="py-20 bg-black/30 relative"><div className="max-w-7xl mx-auto px-4 relative z-10"><div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div><div className="grid lg:grid-cols-2 gap-10"><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div><LiveVoiceAgent config={apiConfig} /></div><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="image"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div><ImageEditor config={apiConfig} /></div></div><BackToTop/></div></section>
+
+                    <section id="testimonios" className="py-20"><div className="max-w-7xl mx-auto px-4"><h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2><div className="text-center mb-12"><a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline"><Icon name="play" size={16}/> Ver Casos (Demo 5 min)</a></div><DemoVideo/><TestimonialCarousel/><BackToTop/></div></section>
+
+                    <section className="relative h-[500px]"><Vortex className="flex items-center flex-col justify-center px-4 w-full h-full" containerClassName="bg-black"><h2 className="text-white text-4xl font-bold text-center">¿Listo para transformar tu escuela?</h2><div className="flex gap-4 mt-8"><a href={getWALink("Hola, quiero unirme.")} target="_blank" className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-full font-bold text-white shadow-lg">Comenzar ahora</a></div></Vortex></section>
+
+                    <footer id="contacto" className="bg-black py-12 border-t border-white/10 text-sm"><div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8 text-gray-400"><div className="col-span-2"><span className="text-2xl font-bold text-white">Edu IA <span className="text-green-400">360°</span></span><p>Transformando la educación.</p></div><div><h4 className="text-white font-bold mb-4">Enlaces</h4><ul className="space-y-2">{NAV_LINKS.slice(0,5).map(l=><li key={l.name}><a href={l.href} className="hover:text-green-400">{l.name}</a></li>)}</ul></div><div><h4 className="text-white font-bold mb-4">Contacto</h4><ul className="space-y-2"><li>consultora@eduia360.com</li><li><a href={getWALink("Duda")} target="_blank" className="hover:text-green-400 flex gap-2"><Icon name="phone" size={14}/> +52 461 182 4875</a></li></ul></div></div><div className="text-center text-gray-600 pt-8 mt-8 border-t border-white/5">© 2025 Edu IA 360°.</div></footer>
                 </div>
-                <div className="text-center text-gray-600 pt-8 mt-8 border-t border-white/5">© 2025 Edu IA 360°.</div>
-            </footer>
-        </div>
-    );
-}
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
