@@ -380,65 +380,6 @@
             );
         };
 
-        const ImageEditor = ({ config }) => {
-            const [selectedImage, setSelectedImage] = useState(null);
-            const [analysis, setAnalysis] = useState("");
-            const [loading, setLoading] = useState(false);
-            const fileInputRef = useRef(null);
-
-            const handleImageUpload = (e) => {
-                if(e.target.files[0]) { 
-                    const r = new FileReader(); 
-                    r.onload = () => { setSelectedImage(r.result); setAnalysis(""); }; 
-                    r.readAsDataURL(e.target.files[0]); 
-                }
-            };
-
-            const analyzeImage = async () => {
-                if (!selectedImage) return;
-                if (!config.apiKey) { setAnalysis("⚠️ Configura tu API Key en el engranaje."); return; }
-                setLoading(true);
-                try {
-                    const mimeType = selectedImage.split(';')[0].split(':')[1];
-                    const base64Data = selectedImage.split(',')[1];
-                    const reply = await callUnifiedAPI({ 
-                        user: "Analiza este recurso educativo y da 2 tips breves.", 
-                        image: { mimeType, data: base64Data }
-                    }, config);
-                    setAnalysis(reply);
-                } catch (e) { setAnalysis(e.message); }
-                setLoading(false);
-            };
-
-            return (
-                <div className="bg-gray-900/80 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm flex flex-col h-full">
-                     {/* VISUAL SCANNER ICON */}
-                    <div className="flex justify-center mb-4">
-                         <div className="w-14 h-14 rounded-full bg-blue-900/30 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                            <Icon name="scan-eye" size={28} className="text-blue-400" />
-                         </div>
-                    </div>
-
-                    {!selectedImage ? (
-                        <div onClick={() => fileInputRef.current.click()} className="flex-grow border-2 border-dashed border-gray-600 hover:border-blue-400 rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-colors">
-                            <Icon name="upload" className="text-gray-400 mb-2" size={32} />
-                            <p className="text-sm text-gray-400 text-center">Subir imagen</p>
-                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                        </div>
-                    ) : (
-                        <div className="flex flex-col h-full">
-                            <div className="relative h-48 mb-4 bg-black rounded-lg overflow-hidden">
-                                <img src={selectedImage} alt="Uploaded" className="w-full h-full object-contain" />
-                                <button onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full hover:bg-red-500 text-white"><Icon name="x" size={16}/></button>
-                            </div>
-                            {analysis ? <div className="bg-blue-900/20 p-3 rounded text-sm text-gray-200 overflow-y-auto max-h-32 border-l-2 border-blue-500">{analysis}</div> : 
-                            <button onClick={analyzeImage} disabled={loading} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold flex justify-center gap-2">{loading ? <Icon name="sparkles" className="animate-spin" size={18}/> : <Icon name="sparkles" size={18}/>} {loading ? "Analizando..." : "Analizar"}</button>}
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
         const ChatWidget = ({ config }) => {
             const [isOpen, setIsOpen] = useState(false);
             const [messages, setMessages] = useState([{ role: 'assistant', text: '¡Hola! Soy el asistente de Edu IA 360. ¿En qué te ayudo?' }]);
@@ -651,13 +592,14 @@
                                     <div className="space-y-8 animate-fade-in">
                                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/60 border border-green-500/50 text-green-300 text-xs font-mono"><span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span> NUEVA GENERACIÓN EDUCATIVA</div>
                                         <h1 className="text-5xl md:text-6xl font-bold leading-tight text-white drop-shadow-lg">IA integral aplicada para <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 glow-text">docentes y escuelas</span></h1>
-                                        <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
-                                        <div className="flex flex-wrap gap-4 pt-2">
-                                            <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
-                                            <a href="https://gemini.google.com/share/77263494e88b" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
-                                        </div>
-                                    </div>
-                                    <div className="hidden lg:block h-[500px] perspective-1000">
+                                <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
+                                <div className="flex flex-wrap gap-4 pt-2">
+                                    <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
+                                    <a href="https://gemini.google.com/share/77263494e88b" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
+                                    <a href={getWALink("Hola, me interesa obtener la herramienta de Auditoría Ética Completa.")} target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-blue-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-blue-500/10"><Icon name="shield"/> Auditoría Ética</a>
+                                </div>
+                            </div>
+                            <div className="hidden lg:block h-[500px] perspective-1000">
                                         <Card3D className="w-full h-full"><div className="absolute inset-0 bg-gradient-to-tr from-green-900/40 to-blue-900/40 rounded-2xl border border-white/10 flex flex-col items-center justify-center p-10"><div className="w-40 h-40 bg-green-500 rounded-full blur-[80px] absolute opacity-40 animate-pulse"></div><div className="relative z-10 text-6xl mb-4 animate-bounce">🚀</div><h2 className="relative z-10 text-3xl font-bold text-white">Resultados en 8 Semanas</h2><p className="relative z-10 text-gray-300 mb-8">Ahorro de 6-8 horas/semana</p><div className="w-full mt-4 relative z-10 bg-black/50 p-4 rounded-xl border border-white/10"><StatsGraph/><div className="flex justify-between text-xs text-gray-400 mt-2"><span>Semana 1</span><span className="text-green-400">Proyección</span><span>Semana 8</span></div></div></div></Card3D>
                                     </div>
                                 </div>
@@ -882,7 +824,18 @@
                     {/* RECURSOS */}
                     <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30"><div className="max-w-7xl mx-auto px-4 text-center mb-12"><h2 className="text-4xl font-bold mb-4">Recursos <span className="text-green-400">Valor</span></h2><div className="grid md:grid-cols-3 gap-6 mt-8">{[{i:"file-text",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},{i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},{i:"compass",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}].map((r,i)=><div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group"><div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div><h3 className="text-xl font-bold mb-2">{r.t}</h3><a href={r.u} target="_blank" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a></div>)}</div><BackToTop/></div></section>
 
-                    <section id="herramientas" className="py-20 bg-black/30 relative"><div className="max-w-7xl mx-auto px-4 relative z-10"><div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div><div className="grid lg:grid-cols-2 gap-10"><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div><LiveVoiceAgent config={apiConfig} /></div><div className="space-y-6"><div className="flex items-center gap-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Icon name="image"/></div><h3 className="text-2xl font-semibold">Análisis Recursos</h3></div><ImageEditor config={apiConfig} /></div></div><BackToTop/></div></section>
+                    <section id="herramientas" className="py-20 bg-black/30 relative">
+                        <div className="max-w-7xl mx-auto px-4 relative z-10">
+                            <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div>
+                            <div className="flex justify-center">
+                                <div className="max-w-lg w-full space-y-6">
+                                    <div className="flex items-center gap-4 justify-center"><div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Icon name="mic"/></div><h3 className="text-2xl font-semibold">Asesoría por Voz</h3></div>
+                                    <LiveVoiceAgent config={apiConfig} />
+                                </div>
+                            </div>
+                        </div>
+                        <BackToTop/>
+                    </section>
 
                     <section id="testimonios" className="py-20"><div className="max-w-7xl mx-auto px-4"><h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2><div className="text-center mb-12"><a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline"><Icon name="play" size={16}/> Ver Casos (Demo 5 min)</a></div><DemoVideo/><TestimonialCarousel/><BackToTop/></div></section>
 
