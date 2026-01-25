@@ -161,7 +161,7 @@
 
         // --- COMPONENTES AUXILIARES ---
 
-        // Nuevo Componente: Modal de Auditoría Ética
+        // Modal 1: Auditoría Ética (CTA -> WhatsApp)
         const EthicalAuditModal = ({ isOpen, onClose, getWALink }) => {
             if (!isOpen) return null;
             
@@ -178,26 +178,20 @@
                 "¿Existe un canal seguro para que alumnos/maestros reporten usos indebidos?"
             ];
 
-            const [step, setStep] = useState(0); // 0: Intro, 1-10: Questions, 11: Result
+            const [step, setStep] = useState(0); 
             const [score, setScore] = useState(0);
 
             const handleAnswer = (yes) => {
                 if (yes) setScore(s => s + 1);
-                // Corregido: Permitir avanzar al paso de resultados (step 11)
                 setStep(s => s + 1);
             };
 
-            const reset = () => {
-                setStep(0);
-                setScore(0);
-            };
+            const reset = () => { setStep(0); setScore(0); };
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-gray-900 border border-blue-500/30 rounded-2xl w-full max-w-lg p-8 shadow-2xl relative overflow-hidden">
                         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><Icon name="x"/></button>
-                        
-                        {/* Background Deco */}
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
 
                         {step === 0 && (
@@ -205,10 +199,10 @@
                                 <div className="w-20 h-20 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
                                     <Icon name="shield" size={40} className="text-blue-400"/>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Diagnóstico Rápido de Ética IA</h3>
-                                <p className="text-gray-300">Responde 10 preguntas rápidas para evaluar preliminarmente la madurez ética de tu institución respecto a la Inteligencia Artificial.</p>
+                                <h3 className="text-2xl font-bold text-white">Auditoría de Ética IA</h3>
+                                <p className="text-gray-300">Evalúa si tu institución cumple con los protocolos de seguridad y ética necesarios para el uso de Inteligencia Artificial.</p>
                                 <button onClick={() => setStep(1)} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
-                                    Iniciar Test
+                                    Iniciar Auditoría
                                 </button>
                             </div>
                         )}
@@ -219,22 +213,13 @@
                                     <span>Pregunta {step} de {questions.length}</span>
                                     <span>Progreso: {Math.round(((step-1)/questions.length)*100)}%</span>
                                 </div>
-                                {/* Progress Bar */}
                                 <div className="w-full h-1 bg-gray-800 rounded-full">
                                     <div className="h-full bg-blue-500 rounded-full transition-all duration-300" style={{width: `${((step-1)/questions.length)*100}%`}}></div>
                                 </div>
-                                
-                                <h4 className="text-xl font-medium text-white min-h-[80px] flex items-center justify-center text-center">
-                                    {questions[step-1]}
-                                </h4>
-
+                                <h4 className="text-xl font-medium text-white min-h-[80px] flex items-center justify-center text-center">{questions[step-1]}</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => handleAnswer(false)} className="py-4 rounded-xl border border-gray-600 hover:border-red-500 hover:bg-red-500/10 text-gray-300 hover:text-red-400 transition-all font-bold">
-                                        No
-                                    </button>
-                                    <button onClick={() => handleAnswer(true)} className="py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all font-bold">
-                                        Sí
-                                    </button>
+                                    <button onClick={() => handleAnswer(false)} className="py-4 rounded-xl border border-gray-600 hover:border-red-500 hover:bg-red-500/10 text-gray-300 hover:text-red-400 transition-all font-bold">No</button>
+                                    <button onClick={() => handleAnswer(true)} className="py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all font-bold">Sí</button>
                                 </div>
                             </div>
                         )}
@@ -242,45 +227,184 @@
                         {step > questions.length && (
                             <div className="text-center space-y-6 animate-fade-in">
                                 <div className="w-24 h-24 mx-auto relative flex items-center justify-center">
-                                    <svg className="w-full h-full transform -rotate-90">
-                                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-800" />
-                                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className={`text-${score > 7 ? 'green' : score > 4 ? 'yellow' : 'red'}-500 transition-all duration-1000 ease-out`} strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * score) / 10} />
-                                    </svg>
                                     <span className="absolute text-3xl font-bold text-white">{score}/10</span>
+                                    <svg className="w-full h-full transform -rotate-90"><circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-800" /><circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className={`text-${score > 7 ? 'blue' : 'red'}-500`} strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * score) / 10} /></svg>
                                 </div>
-
                                 <div>
-                                    <h3 className="text-2xl font-bold text-white mb-2">
-                                        {score > 8 ? "¡Excelente Nivel!" : score > 5 ? "Nivel Intermedio" : "Atención Requerida"}
-                                    </h3>
-                                    <p className="text-gray-400 text-sm px-4">
-                                        {score > 8 
-                                            ? "Tu escuela tiene bases sólidas. Es momento de certificarla." 
-                                            : score > 5 
-                                            ? "Hay avances, pero existen brechas de riesgo importantes." 
-                                            : "Es urgente establecer protocolos éticos para evitar problemas legales o de reputación."}
-                                    </p>
+                                    <h3 className="text-2xl font-bold text-white mb-2">Nivel de Seguridad Ética</h3>
+                                    <p className="text-gray-400 text-sm px-4">{score > 8 ? "Base sólida. Certifícate." : "Se requieren protocolos urgentes."}</p>
                                 </div>
-
                                 <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
-                                    <p className="text-sm text-gray-300 mb-3">Obtén el informe detallado y solicita la <strong>Auditoría Completa</strong> con nuestros expertos.</p>
-                                    <a 
-                                        href={getWALink(`Hola, realicé el test rápido de ética IA en EduIA360 y obtuve ${score}/10. Me interesa solicitar la Auditoría Ética Completa.`)} 
-                                        target="_blank"
-                                        className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg font-bold shadow-lg transition-all"
-                                    >
-                                        <Icon name="message-square" size={20}/> Solicitar Auditoría Completa
-                                    </a>
+                                    <p className="text-sm text-gray-300 mb-3">Solicita la revisión experta de tus protocolos.</p>
+                                    <a href={getWALink(`Hola, en mi auditoría ética obtuve ${score}/10. Solicito la Auditoría Completa.`)} target="_blank" className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold shadow-lg transition-all"><Icon name="message-square" size={20}/> Solicitar Auditoría Completa</a>
+                                </div>
+                                <button onClick={onClose} className="w-full py-2 border border-gray-600 hover:bg-gray-800 text-white rounded-lg font-medium">Cerrar</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // Modal 2: Diagnóstico IA (CTA -> Cursos)
+        const DiagnosticModal = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+            
+            const questions = [
+                "¿Tu colegio tiene objetivos estratégicos definidos para IA este año?",
+                "¿Los docentes usan IA semanalmente para planificar clases?",
+                "¿Existen proyectos de IA visibles para los padres de familia?",
+                "¿La dirección usa datos o simulaciones de IA para tomar decisiones?",
+                "¿Se han automatizado tareas administrativas con IA?",
+                "¿Los alumnos usan IA generativa para crear contenido complejo?",
+                "¿Hay presupuesto asignado para herramientas de IA?",
+                "¿Se usa IA para personalizar el aprendizaje en alumnos con rezago?",
+                "¿Marketing usa IA para generar contenido de redes?",
+                "¿Cuentan con 'Gemelos Pedagógicos' para los docentes?"
+            ];
+
+            const [step, setStep] = useState(0); 
+            const [score, setScore] = useState(0);
+
+            const handleAnswer = (yes) => {
+                if (yes) setScore(s => s + 1);
+                setStep(s => s + 1);
+            };
+
+            const reset = () => { setStep(0); setScore(0); };
+
+            // Lógica de recomendación basada en puntaje
+            const getRecommendation = (finalScore) => {
+                if (finalScore <= 4) {
+                    return {
+                        level: "Inicio Digital",
+                        color: "red",
+                        desc: "Tu institución está dando los primeros pasos. Es crucial construir bases sólidas y perder el miedo a la tecnología.",
+                        roadmap: [
+                            "1. Sensibilización: Taller básico para romper mitos.",
+                            "2. Quick Wins: Implementar IA en tareas administrativas simples.",
+                            "3. Política Base: Definir reglas mínimas de uso."
+                        ],
+                        courses: ["Fundamentos de IA para Docentes", "Productividad Administrativa con IA"]
+                    };
+                } else if (finalScore <= 7) {
+                    return {
+                        level: "En Transición",
+                        color: "yellow",
+                        desc: "Tienen herramientas y voluntad, pero falta una estrategia integral para escalar y medir impacto.",
+                        roadmap: [
+                            "1. Estandarización: Crear prompts institucionales.",
+                            "2. Gemelos Pedagógicos: Personalizar asistentes por docente.",
+                            "3. Integración Curricular: IA como herramienta transversal."
+                        ],
+                        courses: ["Taller de Gemelos Pedagógicos", "Diseño de Experiencias de Aprendizaje con IA"]
+                    };
+                } else {
+                    return {
+                        level: "Escuela Innovadora",
+                        color: "green",
+                        desc: "Lideran el cambio. Es momento de potenciarlo con metodología avanzada, datos y proyecciones a futuro.",
+                        roadmap: [
+                            "1. Gemelo Institucional: Simulación de escenarios directivos.",
+                            "2. Diferenciación: Proyectos de IA visibles hacia la comunidad.",
+                            "3. Mentoría: Formar líderes internos de IA."
+                        ],
+                        courses: ["Certificación de Líderes IA", "Consultoría de Gemelo Institucional"]
+                    };
+                }
+            };
+
+            const resultData = getRecommendation(score);
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><Icon name="x"/></button>
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-teal-600"></div>
+
+                        {step === 0 && (
+                            <div className="text-center space-y-6 animate-fade-in my-auto">
+                                <div className="w-20 h-20 bg-green-900/30 rounded-full flex items-center justify-center mx-auto border border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                                    <Icon name="brain" size={40} className="text-green-400"/>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white">Diagnóstico de Madurez IA</h3>
+                                <p className="text-gray-300">Descubre tu nivel de adopción tecnológica y obtén una <strong>Hoja de Ruta (Roadmap)</strong> personalizada para tu colegio.</p>
+                                <button onClick={() => setStep(1)} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
+                                    Iniciar Diagnóstico
+                                </button>
+                            </div>
+                        )}
+
+                        {step > 0 && step <= questions.length && (
+                            <div className="space-y-8 animate-fade-in my-auto">
+                                <div className="flex justify-between text-xs text-green-400 font-mono uppercase tracking-widest">
+                                    <span>Pregunta {step} de {questions.length}</span>
+                                    <span>Progreso: {Math.round(((step-1)/questions.length)*100)}%</span>
+                                </div>
+                                <div className="w-full h-1 bg-gray-800 rounded-full">
+                                    <div className="h-full bg-green-500 rounded-full transition-all duration-300" style={{width: `${((step-1)/questions.length)*100}%`}}></div>
+                                </div>
+                                <h4 className="text-xl font-medium text-white min-h-[80px] flex items-center justify-center text-center">{questions[step-1]}</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => handleAnswer(false)} className="py-4 rounded-xl border border-gray-600 hover:border-red-500 hover:bg-red-500/10 text-gray-300 hover:text-red-400 transition-all font-bold">No</button>
+                                    <button onClick={() => handleAnswer(true)} className="py-4 rounded-xl bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/20 transition-all font-bold">Sí</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step > questions.length && (
+                            <div className="text-center space-y-6 animate-fade-in overflow-y-auto pr-2 custom-scrollbar">
+                                {/* Header Result */}
+                                <div className="flex items-center justify-center gap-4 mb-2">
+                                    <div className="relative w-16 h-16 flex items-center justify-center">
+                                        <svg className="w-full h-full transform -rotate-90"><circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-800" /><circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className={`text-${resultData.color}-500`} strokeDasharray="175.9" strokeDashoffset={175.9 - (175.9 * score) / 10} /></svg>
+                                        <span className="absolute text-xl font-bold text-white">{score}/10</span>
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-xs text-gray-400 uppercase tracking-widest">Nivel Detectado</p>
+                                        <h3 className={`text-2xl font-bold text-${resultData.color}-400`}>{resultData.level}</h3>
+                                    </div>
                                 </div>
                                 
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={onClose} className="w-full py-3 border border-gray-600 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors">
-                                        Cerrar y volver al sitio
-                                    </button>
-                                    <button onClick={reset} className="text-xs text-gray-500 hover:text-white underline">
-                                        Volver a intentar el test
+                                <p className="text-sm text-gray-300 border-b border-white/10 pb-4">{resultData.desc}</p>
+
+                                {/* Roadmap Section */}
+                                <div className="bg-gray-800/40 rounded-xl p-5 border border-white/5 text-left">
+                                    <h4 className="flex items-center gap-2 text-green-400 font-bold mb-3 uppercase text-xs tracking-wider">
+                                        <Icon name="map" size={16}/> Tu Roadmap Sugerido
+                                    </h4>
+                                    <ul className="space-y-3">
+                                        {resultData.roadmap.map((step, i) => (
+                                            <li key={i} className="flex items-start gap-3 text-sm text-gray-200">
+                                                <span className="bg-green-900/50 text-green-400 w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">{i+1}</span>
+                                                {step}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Courses Recommendation */}
+                                <div className="bg-gradient-to-br from-green-900/20 to-teal-900/20 rounded-xl p-5 border border-green-500/20 text-left">
+                                    <h4 className="flex items-center gap-2 text-teal-400 font-bold mb-3 uppercase text-xs tracking-wider">
+                                        <Icon name="book-open" size={16}/> Cursos Recomendados
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {resultData.courses.map((course, i) => (
+                                            <span key={i} className="px-3 py-1 bg-teal-500/10 border border-teal-500/30 text-teal-200 rounded-full text-xs font-medium">
+                                                {course}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => { onClose(); window.location.href = '#testimonios'; }} 
+                                        className="w-full py-3 bg-white text-green-900 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                                    >
+                                        <Icon name="play" size={18} fill="currentColor"/> Ver Demos y Temarios
                                     </button>
                                 </div>
+
+                                <button onClick={onClose} className="text-xs text-gray-500 hover:text-white underline">Cerrar y volver al sitio</button>
                             </div>
                         )}
                     </div>
@@ -632,7 +756,8 @@
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-            const [isAuditOpen, setIsAuditOpen] = useState(false); // Estado para el modal de auditoría
+            const [isAuditOpen, setIsAuditOpen] = useState(false); 
+            const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false); // Nuevo estado para diagnóstico
             const [apiConfig, setApiConfig] = useState({ provider: 'gemini', apiKey: DEFAULT_GEMINI_KEY });
             
             const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
@@ -669,10 +794,17 @@
                         onSave={handleSaveSettings} 
                     />
                     
+                    {/* Modal Auditoría Ética */}
                     <EthicalAuditModal 
                         isOpen={isAuditOpen} 
                         onClose={() => setIsAuditOpen(false)} 
                         getWALink={getWALink}
+                    />
+
+                    {/* Modal Diagnóstico IA */}
+                    <DiagnosticModal
+                        isOpen={isDiagnosticOpen}
+                        onClose={() => setIsDiagnosticOpen(false)}
                     />
                     
                     {/* NAV */}
@@ -729,7 +861,11 @@
                                 <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6 drop-shadow-md">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
                                 <div className="flex flex-wrap gap-4 pt-2">
                                     <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
-                                    <a href="https://gemini.google.com/share/77263494e88b" target="_blank" rel="noreferrer" className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</a>
+                                    
+                                    {/* Botón Diagnóstico IA Actualizado */}
+                                    <button onClick={() => setIsDiagnosticOpen(true)} className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</button>
+                                    
+                                    {/* Botón Auditoría Ética */}
                                     <button onClick={() => setIsAuditOpen(true)} className="px-8 py-4 bg-black/40 border border-blue-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-blue-500/10"><Icon name="shield"/> Auditoría Ética</button>
                                 </div>
                             </div>
@@ -952,6 +1088,88 @@
                                 </Card3D>
                             </div>
                             <BackToTop />
+                        </div>
+                    </section>
+
+                    {/* SECCIÓN PORTFOLIO 5.0 PREMIUM (NUEVA) */}
+                    <section id="portfolio" className="py-24 bg-black relative overflow-hidden border-t border-white/10">
+                        {/* Background Gradients */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl opacity-20 pointer-events-none">
+                            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-600/30 rounded-full blur-[100px]"></div>
+                            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-600/20 rounded-full blur-[100px]"></div>
+                        </div>
+
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                            <div className="grid lg:grid-cols-2 gap-12 items-center">
+                                <div className="space-y-8 animate-in slide-in-from-left duration-700">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-900/30 border border-yellow-500/50 text-yellow-400 text-xs font-mono font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+                                        <Icon name="crown" size={14} /> Nueva Dimensión Educativa
+                                    </div>
+                                    
+                                    <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">
+                                        Portfolio <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-500 to-yellow-600 glow-text-gold">5.0 Premium</span>
+                                    </h2>
+                                    
+                                    <p className="text-xl text-gray-300 leading-relaxed border-l-4 border-yellow-500 pl-6">
+                                        Eleva la documentación de aprendizaje a un nivel cinematográfico y estratégico. Transforma proyectos escolares en activos digitales de alto impacto para admisiones y acreditaciones.
+                                    </p>
+                                    
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {["Evidencias interactivas potenciadas por IA.", "Narrativa transmedia diseñada para padres.", "Dashboard de competencias en tiempo real."].map((item, i) => (
+                                            <div key={i} className="flex items-center gap-4 bg-gray-900/50 p-3 rounded-lg border border-white/5 hover:border-yellow-500/30 transition-colors">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-black font-bold shadow-lg">
+                                                    <Icon name="check" size={16}/>
+                                                </div>
+                                                <span className="text-gray-200 font-medium">{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-6">
+                                        <a href="https://gemini.google.com/share/f40fcb65d760" target="_blank" className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white rounded-xl font-bold text-lg shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-105 overflow-hidden">
+                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 skew-y-12"></div>
+                                            <Icon name="external-link" size={24}/> Explorar Portfolio 5.0
+                                        </a>
+                                        <p className="mt-4 text-xs text-yellow-500/70 font-mono tracking-wide">ACCESO EXCLUSIVO PARA COLEGIOS INNOVADORES</p>
+                                    </div>
+                                </div>
+
+                                <div className="relative h-[500px] perspective-1000 group hidden lg:block">
+                                    <Card3D className="w-full h-full">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black border border-yellow-500/30 rounded-3xl p-2 shadow-2xl transform group-hover:rotate-y-12 transition-transform duration-700">
+                                            <div className="w-full h-full bg-black rounded-2xl overflow-hidden relative border border-white/5">
+                                                {/* Visual Abstracto del Portfolio */}
+                                                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 mix-blend-overlay"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+                                                
+                                                <div className="absolute bottom-0 left-0 w-full p-8">
+                                                    <div className="flex items-center gap-4 mb-6">
+                                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                                                            <span className="text-2xl font-bold text-black">5.0</span>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-white font-bold text-xl">Dashboard Directivo</h4>
+                                                            <p className="text-yellow-500 text-sm">Actualización en tiempo real</p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Fake UI Elements */}
+                                                    <div className="space-y-3">
+                                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden"><div className="h-full w-3/4 bg-yellow-500 animate-draw"></div></div>
+                                                        <div className="flex justify-between text-xs text-gray-500"><span>Impacto Académico</span><span>98%</span></div>
+                                                        
+                                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden mt-4"><div className="h-full w-1/2 bg-blue-500 animate-draw" style={{animationDelay: '0.5s'}}></div></div>
+                                                        <div className="flex justify-between text-xs text-gray-500"><span>Satisfacción Padres</span><span>94%</span></div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Floating Holographic Element */}
+                                                <div className="absolute top-10 right-10 w-24 h-24 bg-gradient-to-br from-yellow-400/20 to-purple-500/20 rounded-full blur-xl animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                    </Card3D>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
