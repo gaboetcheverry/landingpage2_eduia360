@@ -3,355 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Edu IA 360° — Formación ética en IA para docentes y escuelas. Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas.">
-    <title>Edu IA 360° | Transformación Educativa con IA</title>
-
-    <!--
-        ✅ CLIENTIFY ANALYTICS PLUS PIXEL
-        Ubicación correcta: <head> con "async" (NO defer).
-        - "async" carga el script en paralelo y lo ejecuta al terminar la descarga,
-          sin bloquear el render y disparando el tracking lo antes posible.
-        - "defer" lo ejecutaría DESPUÉS de parsear todo el HTML, perdiendo visitas
-          que rebotan antes de que el DOM esté listo.
-    -->
-    <script async src="https://analyticsplusdev.clientify.net/analytics_plus/pixel/jiGqiYa4Sko2WdQA"></script>
+    <title>Edu IA 360° | Transformación Educativa</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     animation: {
-                        'fade-in':    'fadeIn 0.8s ease-in-out forwards',
-                        'fade-in-up': 'fadeInUp 0.8s ease-in-out forwards',
-                        'float':      'float 3s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        // ✅ Definidos aquí para que Tailwind los genere correctamente
-                        fadeIn: {
-                            '0%':   { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        fadeInUp: {
-                            '0%':   { opacity: '0', transform: 'translateY(24px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        },
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%':      { transform: 'translateY(-10px)' },
-                        },
-                    },
+                        'fade-in': 'fadeIn 0.5s ease-in-out forwards',
+                        'draw': 'draw 2s ease-in-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    }
                 }
             }
         };
     </script>
 
     <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes draw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-draw { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2s ease-in-out forwards; }
+        
         html { scroll-behavior: smooth; }
-        body { background-color: #0f172a; color: white; }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #22d3ee, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .card-glow {
-            transition: box-shadow 0.3s ease, transform 0.3s ease;
-        }
-        .card-glow:hover {
-            box-shadow: 0 0 40px rgba(34, 211, 238, 0.15);
-            transform: translateY(-4px);
-        }
-        /* Animación de scroll para secciones */
-        .reveal {
-            opacity: 0;
-            transform: translateY(24px);
-            transition: opacity 0.7s ease, transform 0.7s ease;
-        }
-        .reveal.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .glass-card { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
-<body class="bg-slate-900 text-white font-sans">
+<body class="bg-slate-900 text-white font-sans overflow-x-hidden">
 
-    <!-- ════════════════════ NAV ════════════════════ -->
     <nav class="fixed w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="#inicio" class="text-xl font-bold text-cyan-400 hover:text-cyan-300 transition-colors">
-                Edu IA 360°
-            </a>
-            <!-- Links de navegación (ocultos en móvil) -->
-            <div class="hidden md:flex items-center gap-6 text-sm text-gray-300">
-                <a href="#servicios" class="hover:text-cyan-400 transition-colors">Servicios</a>
-                <a href="#proceso"   class="hover:text-cyan-400 transition-colors">Proceso</a>
-                <a href="#contacto"  class="hover:text-cyan-400 transition-colors">Contacto</a>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">E</span>
+                    </div>
+                    <span class="text-xl font-bold bg-gradient-to-r from-white to-cyan-400 bg-clip-text text-transparent">Edu IA 360°</span>
+                </div>
+                <div class="hidden md:block space-x-8 text-sm font-medium">
+                    <a href="#inicio" class="text-gray-300 hover:text-white transition-colors">Inicio</a>
+                    <a href="#propuesta" class="text-gray-300 hover:text-white transition-colors">Propuesta</a>
+                    <a href="#beneficios" class="text-gray-300 hover:text-white transition-colors">Beneficios</a>
+                    <button class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-4 py-2 rounded-full font-bold transition-transform hover:scale-105">Consultoría Gratis</button>
+                </div>
             </div>
-            <!-- ✅ Botón funcional con ancla -->
-            <a href="#contacto"
-               class="bg-cyan-500 text-slate-900 px-4 py-2 rounded-full text-sm font-bold hover:bg-cyan-400 transition-colors">
-                Consultoría
-            </a>
         </div>
     </nav>
 
-    <!-- ════════════════════ HERO ════════════════════ -->
-    <section id="inicio" class="pt-40 pb-20 px-4 max-w-7xl mx-auto text-center">
-        <div class="animate-fade-in">
-            <span class="inline-block bg-cyan-500/10 text-cyan-400 border border-cyan-500/30
-                         px-4 py-1 rounded-full text-sm font-medium mb-6">
-                🚀 Formación ética en IA para educadores
-            </span>
-            <h1 class="text-5xl md:text-7xl font-extrabold mb-8 leading-tight">
-                IA integral para <br>
-                <span class="gradient-text">docentes y escuelas</span>
-            </h1>
-            <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-                Más tiempo, clases más activas y evidencias de aprendizaje
-                en <strong class="text-white">8 semanas</strong>.
-            </p>
-            <!-- ✅ Botones con anclas funcionales + responsive mobile -->
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="#servicios"
-                   class="bg-cyan-500 px-8 py-4 rounded-xl font-bold text-slate-900
-                          hover:bg-cyan-400 transition-colors text-center">
-                    Ver Propuesta
-                </a>
-                <a href="#diagnostico"
-                   class="bg-white/10 px-8 py-4 rounded-xl font-bold border border-white/20
-                          hover:bg-white/20 transition-colors text-center">
-                    Diagnóstico IA
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- ════════════════════ SERVICIOS ════════════════════ -->
-    <section id="servicios" class="py-24 px-4">
-        <div class="max-w-7xl mx-auto reveal">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-extrabold mb-4">
-                    Nuestros <span class="gradient-text">Servicios</span>
-                </h2>
-                <p class="text-gray-400 max-w-xl mx-auto">
-                    Soluciones diseñadas para transformar la práctica docente con IA de forma ética y efectiva.
-                </p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-slate-800/60 rounded-2xl p-8 border border-white/5 card-glow">
-                    <div class="text-4xl mb-4">🎓</div>
-                    <h3 class="text-xl font-bold mb-3 text-cyan-400">Formación Docente</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        Programa de 8 semanas para integrar IA en el aula con criterio pedagógico y ético.
-                        Herramientas prácticas desde la primera sesión.
-                    </p>
+    <section id="inicio" class="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)]"></div>
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="animate-fade-in">
+                    <span class="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-sm font-medium mb-6 border border-cyan-500/20">NUEVA GENERACIÓN EDUCATIVA</span>
+                    <h1 class="text-5xl md:text-7xl font-extrabold mb-8 leading-tight">IA integral aplicada para <span class="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">docentes y escuelas</span></h1>
+                    <p class="text-xl text-gray-400 mb-10 leading-relaxed border-l-4 border-cyan-500 pl-6 italic">"Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas"</p>
+                    <div class="flex flex-wrap gap-4">
+                        <button class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-cyan-500/20">Ver Propuesta</button>
+                        <button class="bg-white/5 hover:bg-white/10 border border-white/10 px-8 py-4 rounded-xl font-bold transition-all">Diagnóstico IA</button>
+                    </div>
                 </div>
-                <div class="bg-slate-800/60 rounded-2xl p-8 border border-white/5 card-glow">
-                    <div class="text-4xl mb-4">🏫</div>
-                    <h3 class="text-xl font-bold mb-3 text-cyan-400">Consultoría Escolar</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        Acompañamiento institucional para directivos y coordinadores en la adopción
-                        estratégica de IA educativa.
-                    </p>
-                </div>
-                <div class="bg-slate-800/60 rounded-2xl p-8 border border-white/5 card-glow">
-                    <div class="text-4xl mb-4">📊</div>
-                    <h3 class="text-xl font-bold mb-3 text-cyan-400">Diagnóstico IA</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        Evaluación del nivel de madurez digital de tu institución y hoja de ruta
-                        personalizada para la integración de IA.
-                    </p>
+                <div class="relative animate-float">
+                    <div class="absolute inset-0 bg-cyan-500/20 blur-[100px] rounded-full"></div>
+                    <div class="glass-card rounded-3xl p-8">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-white">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xl text-white">Resultados en 8 Semanas</h3>
+                                <p class="text-sm text-gray-400">Ahorro de 6-8 horas/semana</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-cyan-500 w-3/4 animate-pulse"></div>
+                            </div>
+                            <svg viewBox="0 0 400 100" class="w-full h-24 mt-4">
+                                <path d="M0,80 Q100,70 200,40 T400,10" fill="none" stroke="#06b6d4" stroke-width="3" class="animate-draw"/>
+                                <circle cx="400" cy="10" r="4" fill="#06b6d4"/>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ════════════════════ PROCESO ════════════════════ -->
-    <section id="proceso" class="py-24 px-4 bg-slate-800/30">
-        <div class="max-w-5xl mx-auto reveal">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-extrabold mb-4">
-                    ¿Cómo <span class="gradient-text">funciona?</span>
-                </h2>
-                <p class="text-gray-400 max-w-xl mx-auto">
-                    Un proceso claro, acompañado y orientado a resultados reales en tu institución.
-                </p>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/40
-                                flex items-center justify-center text-cyan-400 font-bold text-xl mb-4">1</div>
-                    <h4 class="font-bold mb-2">Diagnóstico</h4>
-                    <p class="text-gray-400 text-sm">Evaluamos el punto de partida digital de tu equipo.</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/40
-                                flex items-center justify-center text-cyan-400 font-bold text-xl mb-4">2</div>
-                    <h4 class="font-bold mb-2">Diseño</h4>
-                    <p class="text-gray-400 text-sm">Creamos un plan a medida según tus objetivos académicos.</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/40
-                                flex items-center justify-center text-cyan-400 font-bold text-xl mb-4">3</div>
-                    <h4 class="font-bold mb-2">Formación</h4>
-                    <p class="text-gray-400 text-sm">Talleres prácticos, sincrónicos y acompañados.</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/40
-                                flex items-center justify-center text-cyan-400 font-bold text-xl mb-4">4</div>
-                    <h4 class="font-bold mb-2">Resultados</h4>
-                    <p class="text-gray-400 text-sm">Métricas de impacto y evidencias de aprendizaje.</p>
-                </div>
-            </div>
+    <footer class="bg-slate-950 py-12 border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-500">© 2026 Edu IA 360° | Estratega de IA y arquitecto de aprendizaje 5.0</p>
         </div>
-    </section>
-
-    <!-- ════════════════════ CTA DIAGNÓSTICO ════════════════════ -->
-    <section id="diagnostico" class="py-24 px-4">
-        <div class="max-w-3xl mx-auto text-center bg-gradient-to-br from-slate-800 to-slate-900
-                    rounded-3xl p-12 border border-cyan-500/20 reveal">
-            <h2 class="text-4xl font-extrabold mb-4">
-                ¿Lista tu escuela para la <span class="gradient-text">IA?</span>
-            </h2>
-            <p class="text-gray-400 mb-8">
-                Obtén tu diagnóstico gratuito y descubre en qué nivel se encuentra tu institución educativa.
-            </p>
-            <a href="#contacto"
-               class="bg-cyan-500 text-slate-900 px-10 py-4 rounded-xl font-bold text-lg
-                      hover:bg-cyan-400 transition-colors inline-block">
-                Solicitar Diagnóstico Gratuito →
-            </a>
-        </div>
-    </section>
-
-    <!-- ════════════════════ CONTACTO ════════════════════ -->
-    <section id="contacto" class="py-24 px-4 bg-slate-800/30">
-        <div class="max-w-2xl mx-auto reveal">
-            <div class="text-center mb-12">
-                <h2 class="text-4xl font-extrabold mb-4">
-                    Agenda tu <span class="gradient-text">Consultoría</span>
-                </h2>
-                <p class="text-gray-400">Cuéntanos sobre tu institución y te contactamos en menos de 24 horas.</p>
-            </div>
-
-            <!-- Formulario -->
-            <form id="contactForm" class="space-y-5" onsubmit="handleFormSubmit(event)" novalidate>
-                <div class="grid md:grid-cols-2 gap-5">
-                    <input type="text" name="nombre" placeholder="Nombre completo" required
-                        class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white
-                               placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors">
-                    <input type="email" name="email" placeholder="Correo electrónico" required
-                        class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white
-                               placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors">
-                </div>
-                <input type="text" name="institucion" placeholder="Nombre de tu institución" required
-                    class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white
-                           placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors">
-                <input type="tel" name="telefono" placeholder="Teléfono / WhatsApp (opcional)"
-                    class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white
-                           placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors">
-                <select name="servicio"
-                    class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3
-                           text-gray-400 focus:outline-none focus:border-cyan-500 transition-colors">
-                    <option value="">¿Qué servicio te interesa?</option>
-                    <option value="formacion">Formación Docente (8 semanas)</option>
-                    <option value="consultoria">Consultoría Escolar</option>
-                    <option value="diagnostico">Diagnóstico IA Gratuito</option>
-                    <option value="masterclass">Master Class IA Ética</option>
-                </select>
-                <textarea name="mensaje" rows="4" placeholder="Cuéntanos brevemente tu situación actual..."
-                    class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white
-                           placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors resize-none"></textarea>
-                <button type="submit"
-                    class="w-full bg-cyan-500 text-slate-900 py-4 rounded-xl font-bold text-lg
-                           hover:bg-cyan-400 transition-colors">
-                    Enviar Solicitud →
-                </button>
-            </form>
-
-            <!-- Mensaje de éxito (oculto por defecto) -->
-            <div id="formSuccess" class="hidden text-center py-10">
-                <div class="text-5xl mb-4 animate-float">✅</div>
-                <h3 class="text-2xl font-bold text-cyan-400 mb-2">¡Mensaje enviado!</h3>
-                <p class="text-gray-400">Te contactaremos en menos de 24 horas.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- ════════════════════ FOOTER ════════════════════ -->
-    <footer class="py-12 border-t border-white/5 text-center">
-        <p class="text-cyan-400 font-bold text-lg mb-2">Edu IA 360°</p>
-        <p class="text-gray-500 text-sm">© 2026 Edu IA 360° | Estratega de IA Educativa · Querétaro, México</p>
-        <p class="text-gray-600 text-xs mt-2">Formación ética · Impacto real · IA con propósito</p>
     </footer>
 
-    <script>
-        // ─────────────────────────────────────────────────────────────
-        // 1. FORMULARIO + EVENTO CLIENTIFY
-        //    El pixel de Clientify Analytics Plus expone window._cap()
-        //    para disparar eventos personalizados de conversión.
-        // ─────────────────────────────────────────────────────────────
-        function handleFormSubmit(e) {
-            e.preventDefault();
-            const form    = document.getElementById('contactForm');
-            const success = document.getElementById('formSuccess');
-            const data    = new FormData(form);
-
-            // ✅ Disparo de evento de conversión hacia Clientify
-            // Espera a que el pixel esté listo antes de llamarlo
-            function fireClientifyEvent() {
-                if (typeof window._cap !== 'undefined') {
-                    window._cap('event', 'lead', {
-                        nombre:      data.get('nombre'),
-                        email:       data.get('email'),
-                        institucion: data.get('institucion'),
-                        servicio:    data.get('servicio'),
-                        source:      'landing_eduia360'
-                    });
-                } else {
-                    // Reintenta 1 vez si el pixel aún no cargó
-                    setTimeout(() => {
-                        if (typeof window._cap !== 'undefined') {
-                            window._cap('event', 'lead', { source: 'landing_eduia360' });
-                        }
-                    }, 1500);
-                }
-            }
-
-            fireClientifyEvent();
-            form.classList.add('hidden');
-            success.classList.remove('hidden');
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // 2. INTERSECTION OBSERVER — Animaciones al hacer scroll
-        //    Se excluye #inicio porque ya usa animate-fade-in de Tailwind
-        // ─────────────────────────────────────────────────────────────
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target); // Dispara solo una vez
-                }
-            });
-        }, { threshold: 0.12 });
-
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-        // ─────────────────────────────────────────────────────────────
-        // 3. TRACKING DE CLICS EN CTAs hacia Clientify
-        // ─────────────────────────────────────────────────────────────
-        document.querySelectorAll('a[href="#contacto"], a[href="#diagnostico"]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (typeof window._cap !== 'undefined') {
-                    window._cap('event', 'cta_click', { label: btn.textContent.trim() });
-                }
-            });
-        });
-    </script>
-
-</body>
+    <script defer src="https://analyticsplusdev.clientify.net/analytics_plus/pixel/jiGqiYa4Sko2WdQA"></script>
+    </body>
 </html>
