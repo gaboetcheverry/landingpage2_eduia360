@@ -716,6 +716,102 @@
                         </div>
                     </section>
 
+                    {/* PORTFOLIO 5.0 */}
+                    <section id="portfolio" className="py-24 bg-black relative overflow-hidden border-t border-white/10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid lg:grid-cols-2 gap-12 items-center">
+                                <div className="space-y-8">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-900/30 border border-yellow-500/50 text-yellow-400 text-xs font-mono font-bold tracking-widest uppercase">
+                                        <Icon name="crown" size={14} /> Nueva Dimensión Educativa
+                                    </div>
+                                    <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">
+                                        Portfolio <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-500 to-yellow-600 glow-text-gold">5.0 Premium</span>
+                                    </h2>
+                                    <p className="text-xl text-gray-300 leading-relaxed border-l-4 border-yellow-500 pl-6">
+                                        Eleva la documentación de aprendizaje a un nivel cinematográfico y estratégico.
+                                    </p>
+                                    <div className="pt-6">
+                                        <a href="https://gemini.google.com/share/f40fcb65d760" target="_blank" rel="noopener noreferrer" className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white rounded-xl font-bold text-lg shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all hover:scale-105">
+                                            <Icon name="external-link" size={24}/> Explorar Portfolio 5.0
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* RECURSOS */}
+                    <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30">
+                        <div className="max-w-7xl mx-auto px-4 text-center">
+                            <h2 className="text-4xl font-bold mb-4">Recursos <span className="text-green-400">Valor</span></h2>
+                            <div className="grid md:grid-cols-3 gap-6 mt-8">
+                                {[
+                                    {i:"file-text",t:"Checklist integración",u:"https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing"},
+                                    {i:"book-open",t:"Syllabus editable",u:"https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing"},
+                                    {i:"compass",t:"Guía directivos",u:"https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing"}
+                                ].map((r,i) => (
+                                    <div key={i} className="bg-gray-900 border border-gray-700 p-6 rounded-xl hover:border-green-500 group">
+                                        <div className="text-3xl mb-4"><Icon name={r.i} size={32}/></div>
+                                        <h3 className="text-xl font-bold mb-2">{r.t}</h3>
+                                        <a href={r.u} target="_blank" rel="noopener noreferrer" className="text-green-400 font-bold flex items-center gap-2 justify-center group-hover:scale-105 transition-transform">Descargar <Icon name="external-link" size={14}/></a>
+                                    </div>
+                                ))}
+                            </div>
+                            <BackToTop/>
+                        </div>
+                    </section>
+
+                    {/* HERRAMIENTAS */}
+                    <section id="herramientas" className="py-20 bg-black/30 relative">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div>
+                            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                                <div className="bg-gray-900 border border-green-500/20 rounded-2xl p-8 hover:border-green-500/50 transition-all group">
+                                    <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                        <Icon name="mic" size={32} className="text-green-400"/>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-3">Asesoría Pedagógica por Voz</h3>
+                                    <p className="text-gray-400 text-sm mb-6">Interactúa con un asistente IA entrenado para resolver dudas docentes en tiempo real.</p>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); handleWhatsAppClick('Me interesa probar la Asesoría por Voz.', 'Tool_Voice_Click'); }} className="flex items-center text-green-400 font-bold hover:text-green-300">Solicitar Demo <Icon name="arrow-right" size={16} className="ml-2"/></a>
+                                </div>
+                                <div className="bg-gray-900 border border-blue-500/20 rounded-2xl p-8 hover:border-blue-500/50 transition-all group">
+                                    <div className="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                        <Icon name="scan-eye" size={32} className="text-blue-400"/>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-3">Análisis de Recursos</h3>
+                                    <p className="text-gray-400 text-sm mb-6">Sube imágenes de material didáctico y recibe sugerencias de mejora instantáneas.</p>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); handleWhatsAppClick('Me interesa probar el Análisis de Recursos.', 'Tool_Analysis_Click'); }} className="flex items-center text-blue-400 font-bold hover:text-blue-300">Solicitar Demo <Icon name="arrow-right" size={16} className="ml-2"/></a>
+                                </div>
+                            </div>
+                        </div>
+                        <BackToTop/>
+                    </section>
+
+                    {/* TESTIMONIOS */}
+                    <section id="testimonios" className="py-20">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2>
+                            <div className="text-center mb-12">
+                                <a href="https://gemini.google.com/share/2e29d819bc48" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline">
+                                    <Icon name="play" size={16}/> Ver Casos (Demo 5 min)
+                                </a>
+                            </div>
+                            <DemoVideo/>
+                            <TestimonialCarousel/>
+                            <BackToTop/>
+                        </div>
+                    </section>
+
+                    {/* CTA FINAL */}
+                    <section className="relative h-[500px]">
+                        <Vortex className="flex items-center flex-col justify-center px-4 w-full h-full" containerClassName="bg-black">
+                            <h2 className="text-white text-4xl font-bold text-center">¿Listo para transformar tu escuela?</h2>
+                            <div className="flex gap-4 mt-8">
+                                <a href="#" onClick={(e) => { e.preventDefault(); handleWhatsAppClick('Hola, quiero unirme.', 'Final_CTA_Click'); }} className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-full font-bold text-white shadow-lg">Comenzar ahora</a>
+                            </div>
+                        </Vortex>
+                    </section>
+
                     {/* FOOTER / CONTACTO */}
                     <footer id="contacto" className="bg-black py-12 border-t border-white/10 text-sm">
                         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8 text-gray-400">
