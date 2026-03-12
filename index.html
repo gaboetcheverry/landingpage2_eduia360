@@ -35,6 +35,20 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- Prevención de errores de Clientify en Canvas o con AdBlockers -->
+    <script>
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('analytics library')) {
+                e.preventDefault(); // Silencia el error en consola
+            }
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            if (e.reason && (e.reason.message || e.reason.toString()).includes('analytics library')) {
+                e.preventDefault(); // Silencia promesas rechazadas
+            }
+        });
+    </script>
+
     <!--Clientify Tracking Begins-->
     <script src="https://analyticsplusdev.clientify.net/analytics_plus/pixel/git5fdWkEoTBxsSE"></script>
     <!--Clientify Tracking Ends-->
