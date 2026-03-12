@@ -35,9 +35,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Clientify Tracking -->
-    <script async defer src="https://analyticsplusdev.clientify.net/analytics_plus/pixel/jlGqiYa4Sko2WdQA"></script>
-    
     <style>
         html { scroll-behavior: smooth; }
         .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
@@ -54,12 +51,21 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // ✅ TRACKING CLIENTIFY
+        // ✅ TRACKING CLIENTIFY - FUNCIÓN GLOBAL
         const trackConversion = (eventName, eventData = {}) => {
-            if (window.clientify && typeof window.clientify.track === 'function') {
-                window.clientify.track(eventName, eventData);
-            } else {
-                console.log(`[Clientify Track] Event: ${eventName}`, eventData);
+            try {
+                if (typeof window.__clientifyTrack === 'function') {
+                    const sent = window.__clientifyTrack(eventName, eventData);
+                    if (sent) {
+                        console.log('[Clientify] Event tracked:', eventName, eventData);
+                    } else {
+                        console.log('[Clientify] Event queued:', eventName, eventData);
+                    }
+                } else {
+                    console.log('[Clientify] Helper no disponible:', eventName, eventData);
+                }
+            } catch (error) {
+                console.error('[Clientify] Error tracking:', error);
             }
         };
 
@@ -90,26 +96,12 @@
             { name: 'Casos', href: '#testimonios' },
         ];
 
-        // ✅ MODAL AUDITORÍA ÉTICA (COMPLETAMENTE CORREGIDO)
+        // ✅ MODAL AUDITORÍA ÉTICA - COMPLETAMENTE CORREGIDO
         const EthicalAuditModal = ({ isOpen, onClose, getWALink }) => {
             const [step, setStep] = useState(0);
             const [score, setScore] = useState(0);
-            const modalContentRef = useRef(null);
 
-            const questions = [
-                "¿Tu escuela tiene una política escrita y clara sobre el uso de IA?",
-                "¿Se ha informado a los padres sobre qué herramientas de IA utilizan los alumnos?",
-                "¿Se eliminan los datos personales de los estudiantes antes de ingresarlos a la IA?",
-                "¿Los docentes han recibido capacitación específica sobre sesgos algorítmicos?",
-                "¿Existe un protocolo definido para distinguir entre plagio y uso asistido por IA?",
-                "¿Se evalúan los términos de privacidad de las apps de IA antes de usarlas?",
-                "¿Los estudiantes han firmado o acordado un código de honor sobre IA?",
-                "¿Hay siempre supervisión humana en la calificación o feedback generado por IA?",
-                "¿Se discute activamente sobre alucinaciones y errores de la IA en clase?",
-                "¿Existe un canal seguro para que alumnos/maestros reporten usos indebidos?"
-            ];
-
-            // ✅ Resetear estado cuando se abre/cierra
+            // ✅ Resetear estado cada vez que se abre el modal
             useEffect(() => {
                 if (isOpen) {
                     setStep(0);
@@ -128,27 +120,41 @@
                 return () => document.removeEventListener('keydown', handleEsc);
             }, [isOpen, onClose]);
 
-            // ✅ Cerrar al hacer clic fuera
-            const handleBackdropClick = (e) => {
-                if (e.target === e.currentTarget) {
-                    onClose();
-                }
-            };
+            if (!isOpen) return null;
+
+            const questions = [
+                "¿Tu escuela tiene una política escrita y clara sobre el uso de IA?",
+                "¿Se ha informado a los padres sobre qué herramientas de IA utilizan los alumnos?",
+                "¿Se eliminan los datos personales de los estudiantes antes de ingresarlos a la IA?",
+                "¿Los docentes han recibido capacitación específica sobre sesgos algorítmicos?",
+                "¿Existe un protocolo definido para distinguir entre plagio y uso asistido por IA?",
+                "¿Se evalúan los términos de privacidad de las apps de IA antes de usarlas?",
+                "¿Los estudiantes han firmado o acordado un código de honor sobre IA?",
+                "¿Hay siempre supervisión humana en la calificación o feedback generado por IA?",
+                "¿Se discute activamente sobre alucinaciones y errores de la IA en clase?",
+                "¿Existe un canal seguro para que alumnos/maestros reporten usos indebidos?"
+            ];
 
             const handleAnswer = (yes) => {
                 if (yes) setScore(prev => prev + 1);
                 setStep(prev => prev + 1);
             };
 
-            if (!isOpen) return null;
+            const handleStart = () => {
+                trackConversion('Audit_Started', { source: 'modal_button' });
+                setStep(1);
+            };
+
+            const handleComplete = () => {
+                trackConversion('Audit_Completed', { score: score, total: questions.length });
+            };
 
             return (
                 <div 
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
-                    onClick={handleBackdropClick}
+                    onClick={onClose}
                 >
                     <div 
-                        ref={modalContentRef}
                         className="bg-gray-900 border border-blue-500/30 rounded-2xl w-full max-w-lg p-8 shadow-2xl relative overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -165,10 +171,7 @@
                                 <h3 className="text-2xl font-bold text-white">Auditoría de Ética IA</h3>
                                 <p className="text-gray-300">Evalúa si tu institución cumple con los protocolos de seguridad y ética necesarios para el uso de Inteligencia Artificial.</p>
                                 <button 
-                                    onClick={() => {
-                                        trackConversion('Audit_Started', { source: 'hero_button' });
-                                        setStep(1);
-                                    }} 
+                                    onClick={handleStart}
                                     className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
                                 >
                                     Iniciar Auditoría
@@ -210,9 +213,7 @@
                                     <p className="text-sm text-gray-300 mb-3">Solicita la revisión experta de tus protocolos.</p>
                                     <a 
                                         href={getWALink(`Hola, en mi auditoría ética obtuve ${score}/10. Solicito la Auditoría Completa.`)} 
-                                        onClick={() => {
-                                            trackConversion('Audit_Completed', { score: score });
-                                        }}
+                                        onClick={handleComplete}
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold shadow-lg transition-all"
@@ -228,26 +229,12 @@
             );
         };
 
-        // ✅ MODAL DIAGNÓSTICO IA (COMPLETAMENTE CORREGIDO)
+        // ✅ MODAL DIAGNÓSTICO IA - COMPLETAMENTE CORREGIDO
         const DiagnosticModal = ({ isOpen, onClose }) => {
             const [step, setStep] = useState(0);
             const [score, setScore] = useState(0);
-            const modalContentRef = useRef(null);
 
-            const questions = [
-                "¿Tu colegio tiene objetivos estratégicos definidos para IA este año?",
-                "¿Los docentes usan IA semanalmente para planificar clases?",
-                "¿Existen proyectos de IA visibles para los padres de familia?",
-                "¿La dirección usa datos o simulaciones de IA para tomar decisiones?",
-                "¿Se han automatizado tareas administrativas con IA?",
-                "¿Los alumnos usan IA generativa para crear contenido complejo?",
-                "¿Hay presupuesto asignado para herramientas de IA?",
-                "¿Se usa IA para personalizar el aprendizaje en alumnos con rezago?",
-                "¿Marketing usa IA para generar contenido de redes?",
-                "¿Cuentan con 'Gemelos Pedagógicos' para los docentes?"
-            ];
-
-            // ✅ Resetear estado cuando se abre/cierra
+            // ✅ Resetear estado cada vez que se abre el modal
             useEffect(() => {
                 if (isOpen) {
                     setStep(0);
@@ -266,16 +253,29 @@
                 return () => document.removeEventListener('keydown', handleEsc);
             }, [isOpen, onClose]);
 
-            // ✅ Cerrar al hacer clic fuera
-            const handleBackdropClick = (e) => {
-                if (e.target === e.currentTarget) {
-                    onClose();
-                }
-            };
+            if (!isOpen) return null;
+
+            const questions = [
+                "¿Tu colegio tiene objetivos estratégicos definidos para IA este año?",
+                "¿Los docentes usan IA semanalmente para planificar clases?",
+                "¿Existen proyectos de IA visibles para los padres de familia?",
+                "¿La dirección usa datos o simulaciones de IA para tomar decisiones?",
+                "¿Se han automatizado tareas administrativas con IA?",
+                "¿Los alumnos usan IA generativa para crear contenido complejo?",
+                "¿Hay presupuesto asignado para herramientas de IA?",
+                "¿Se usa IA para personalizar el aprendizaje en alumnos con rezago?",
+                "¿Marketing usa IA para generar contenido de redes?",
+                "¿Cuentan con 'Gemelos Pedagógicos' para los docentes?"
+            ];
 
             const handleAnswer = (yes) => {
                 if (yes) setScore(prev => prev + 1);
                 setStep(prev => prev + 1);
+            };
+
+            const handleStart = () => {
+                trackConversion('Diagnostic_Started', { source: 'modal_button' });
+                setStep(1);
             };
 
             const getRecommendation = (finalScore) => {
@@ -288,17 +288,18 @@
                 }
             };
 
-            if (!isOpen) return null;
-
             const resultData = getRecommendation(score);
+
+            const handleComplete = () => {
+                trackConversion('Diagnostic_Completed', { score: score, level: resultData.level });
+            };
 
             return (
                 <div 
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
-                    onClick={handleBackdropClick}
+                    onClick={onClose}
                 >
                     <div 
-                        ref={modalContentRef}
                         className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -315,10 +316,7 @@
                                 <h3 className="text-2xl font-bold text-white">Diagnóstico de Madurez IA</h3>
                                 <p className="text-gray-300">Descubre tu nivel de adopción tecnológica y obtén una <strong>Hoja de Ruta (Roadmap)</strong> personalizada.</p>
                                 <button 
-                                    onClick={() => {
-                                        trackConversion('Diagnostic_Started', { source: 'hero_button' });
-                                        setStep(1);
-                                    }} 
+                                    onClick={handleStart}
                                     className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
                                 >
                                     Iniciar Diagnóstico
@@ -375,7 +373,7 @@
                                     
                                     <button 
                                         onClick={() => {
-                                            trackConversion('Diagnostic_Completed', { score: score, level: resultData.level });
+                                            handleComplete();
                                             onClose();
                                             window.location.href = '#testimonios';
                                         }} 
@@ -593,18 +591,18 @@
             );
         };
 
-        // ✅ APP PRINCIPAL (ESTADO Y HANDLERS CORREGIDOS)
+        // ✅ APP PRINCIPAL - ESTADO Y HANDLERS CORREGIDOS
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [isAuditOpen, setIsAuditOpen] = useState(false);
             const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
             
-            const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
+            const getWALink = useCallback((text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`, []);
             
-            const handleWhatsAppClick = (text, eventName) => {
+            const handleWhatsAppClick = useCallback((text, eventName) => {
                 trackConversion(eventName, { source: 'whatsapp_button', text_preview: text.substring(0, 20) });
                 window.open(getWALink(text), '_blank', 'noopener,noreferrer');
-            };
+            }, [getWALink]);
 
             // ✅ Handlers específicos para modales CON TRACKING
             const openAudit = useCallback(() => {
@@ -620,8 +618,8 @@
             const closeAudit = useCallback(() => setIsAuditOpen(false), []);
             const closeDiagnostic = useCallback(() => setIsDiagnosticOpen(false), []);
             
-            const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-            const closeMenu = () => setIsMobileMenuOpen(false);
+            const toggleMenu = useCallback(() => setIsMobileMenuOpen(prev => !prev), []);
+            const closeMenu = useCallback(() => setIsMobileMenuOpen(false), []);
 
             return (
                 <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
@@ -914,6 +912,81 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+
+    <script>
+        (function () {
+            const CLIENTIFY_PIXEL_SRC = "https://analyticsplusdev.clientify.net/analyticsplus/pixel/jlGqiYa4Sko2WdQA";
+
+            window.__clientifyQueue = window.__clientifyQueue || [];
+            window.__clientifyReady = false;
+
+            window.__clientifyTrack = function (eventName, eventData = {}) {
+                try {
+                    if (window.clientify && typeof window.clientify.track === 'function') {
+                        window.clientify.track(eventName, eventData);
+                        return true;
+                    }
+                    window.__clientifyQueue.push({ eventName, eventData });
+                    return false;
+                } catch (error) {
+                    console.error('[Clientify] Error tracking:', error);
+                    return false;
+                }
+            };
+
+            window.__flushClientifyQueue = function () {
+                if (!(window.clientify && typeof window.clientify.track === 'function')) {
+                    return false;
+                }
+
+                window.__clientifyReady = true;
+
+                while (window.__clientifyQueue.length > 0) {
+                    const item = window.__clientifyQueue.shift();
+                    try {
+                        window.clientify.track(item.eventName, item.eventData || {});
+                    } catch (error) {
+                        console.error('[Clientify] Error flushing queue:', error);
+                    }
+                }
+
+                return true;
+            };
+
+            function loadClientifyPixel() {
+                if (document.getElementById('clientify-pixel')) {
+                    window.__flushClientifyQueue();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.id = 'clientify-pixel';
+                script.src = CLIENTIFY_PIXEL_SRC;
+                script.defer = true;
+
+                script.onload = function () {
+                    window.__flushClientifyQueue();
+                };
+
+                script.onerror = function (error) {
+                    console.error('[Clientify] Pixel load error:', error);
+                };
+
+                document.body.appendChild(script);
+            }
+
+            loadClientifyPixel();
+
+            let tries = 0;
+            const maxTries = 40;
+            const interval = setInterval(function () {
+                tries += 1;
+                if (window.__flushClientifyQueue() || tries >= maxTries) {
+                    clearInterval(interval);
+                }
+            }, 250);
+        })();
     </script>
 </body>
 </html>
