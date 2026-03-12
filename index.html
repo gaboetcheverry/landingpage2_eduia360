@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta
     name="description"
-    content="Edu IA 360° - IA integral aplicada para docentes y escuelas. Formación, consultoría, diagnóstico y acompañamiento ético para instituciones educativas."
+    content="Edu IA 360° | IA integral aplicada para docentes y escuelas. Diagnóstico, consultoría, auditoría ética y acompañamiento para instituciones educativas."
   />
   <title>Edu IA 360° | Transformación Educativa</title>
 
@@ -18,24 +18,24 @@
             "fade-in": "fadeIn .6s ease-out forwards",
             "float": "float 4s ease-in-out infinite",
             "draw": "draw 2s ease forwards",
-            "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite"
           },
           keyframes: {
             fadeIn: {
               "0%": { opacity: "0", transform: "translateY(10px)" },
-              "100%": { opacity: "1", transform: "translateY(0)" },
+              "100%": { opacity: "1", transform: "translateY(0)" }
             },
             float: {
               "0%, 100%": { transform: "translateY(0px)" },
-              "50%": { transform: "translateY(-10px)" },
+              "50%": { transform: "translateY(-10px)" }
             },
             draw: {
               "0%": { strokeDasharray: "1000", strokeDashoffset: "1000" },
-              "100%": { strokeDashoffset: "0" },
-            },
-          },
-        },
-      },
+              "100%": { strokeDashoffset: "0" }
+            }
+          }
+        }
+      }
     };
   </script>
 
@@ -47,163 +47,173 @@
   <style>
     html { scroll-behavior: smooth; }
     body {
-      background: radial-gradient(circle at top, rgba(16, 185, 129, 0.12), transparent 28%),
-                  radial-gradient(circle at right, rgba(59, 130, 246, 0.10), transparent 24%),
-                  #020617;
-      color: #e5e7eb;
+      background:
+        radial-gradient(circle at top, rgba(34,197,94,0.08), transparent 25%),
+        radial-gradient(circle at right, rgba(16,185,129,0.05), transparent 20%),
+        #000000;
+      color: #f3f4f6;
       overflow-x: hidden;
     }
-    .glow-text { text-shadow: 0 0 18px rgba(74, 222, 128, 0.35); }
-    .glow-text-gold { text-shadow: 0 0 18px rgba(250, 204, 21, 0.25); }
     .glass {
-      background: rgba(15, 23, 42, 0.55);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(17, 24, 39, 0.45);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,.08);
     }
+    .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.45); }
+    .glow-text-gold { text-shadow: 0 0 18px rgba(250, 204, 21, 0.28); }
     .grid-bg {
       background-image:
         linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0.1));
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,.12));
     }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(107, 114, 128, 0.7);
+      background: rgba(107,114,128,.8);
       border-radius: 999px;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-gray-100 font-sans">
+<body class="bg-black text-gray-100 font-sans overflow-x-hidden">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useEffect } = React;
 
     const PIXEL_ID = "jiGqiYa4Sko2WdQA";
     const WHATSAPP_NUMBER = "524611824875";
-    const EMAIL = "eduia360@innovatalenthum360.uk";
 
     const NAV_LINKS = [
       { name: "Inicio", href: "#inicio" },
-      { name: "Propuesta", href: "#propuesta" },
+      { name: "Propuesta", href: "#objetivo" },
       { name: "Beneficios", href: "#beneficios" },
       { name: "Planes", href: "#planes" },
       { name: "Portfolio 5.0", href: "#portfolio" },
       { name: "Recursos", href: "#recursos" },
+      { name: "Herramientas", href: "#herramientas" },
       { name: "Casos", href: "#testimonios" },
-      { name: "Contacto", href: "#contacto" },
+      { name: "Contacto", href: "#contacto" }
     ];
 
     const BENEFITS = [
       {
-        icon: "clock-3",
+        icon: "hourglass",
         title: "Ahorro de tiempo",
-        desc: "Reduce horas de planeación, rúbricas y retroalimentación con flujos guiados y asistentes personalizados.",
+        desc: "Ahorra horas en planeación, rúbricas, prompts y retroalimentación."
       },
       {
         icon: "users",
-        title: "Más participación",
-        desc: "Diseña experiencias activas, evaluación formativa y evidencias de aprendizaje con apoyo de IA.",
+        title: "Mayor participación",
+        desc: "Activa clases más dinámicas y experiencias de aprendizaje mejor diseñadas."
       },
       {
-        icon: "shield-check",
-        title: "Ética y privacidad",
-        desc: "Integra lineamientos, uso responsable de datos y protocolos para docentes, dirección y familias.",
+        icon: "settings",
+        title: "Integración sistematizada",
+        desc: "Plantillas, procesos y acompañamiento para que la IA no dependa del ensayo y error."
       },
       {
         icon: "bar-chart-3",
         title: "Evidencias de impacto",
-        desc: "Convierte la innovación en resultados observables para coordinación, marketing y admisiones.",
+        desc: "Convierte innovación en resultados visibles para dirección, familias y admisiones."
       },
       {
-        icon: "bot",
-        title: "Gemelos pedagógicos",
-        desc: "Cada docente puede trabajar con un asistente alineado a su estilo, su materia y su contexto.",
+        icon: "shield-check",
+        title: "Ética y privacidad",
+        desc: "Lineamientos claros para uso responsable, protección de datos y supervisión humana."
       },
       {
-        icon: "graduation-cap",
+        icon: "heart-handshake",
         title: "Acompañamiento real",
-        desc: "No solo recibes prompts: recibes estrategia, formación y seguimiento para implementación.",
-      },
+        desc: "No solo recibes prompts: recibes metodología, guía y seguimiento."
+      }
     ];
 
     const PERSONAS = [
       {
+        key: "directores",
         color: "yellow",
         icon: "crown",
         tag: "Directores Generales y Propietarios",
         title: "Convierte la IA en ventaja competitiva",
-        desc: "Proyectos visibles, narrativa institucional, evidencias y decisiones estratégicas con enfoque de innovación ética.",
+        desc: "Proyectos visibles, narrativa institucional, resultados medibles y posicionamiento en innovación educativa.",
         bullets: [
-          "Portafolio institucional para Open House y admisiones",
-          "Reportes ejecutivos con indicadores para dirección",
+          "Portafolio institucional de proyectos de IA",
+          "Reportes ejecutivos con métricas clave",
           "Mensajes de confianza para padres y comunidad",
-          "Ruta de implementación por etapas",
+          "Ruta de implementación por etapas"
         ],
-        cta: "Quiero un diagnóstico para mi colegio",
+        cta: "Hola, soy Director o Propietario y quiero un diagnóstico sin costo."
       },
       {
+        key: "academicos",
         color: "blue",
         icon: "book-open",
         tag: "Académicos y Coordinadores",
         title: "IA integrada al currículo con acompañamiento",
-        desc: "Co-diseño por materia, plantillas, rúbricas, prompts y seguimiento para elevar la práctica docente.",
+        desc: "Co-diseño por materia, gemelos pedagógicos, plantillas y seguimiento aplicado.",
         bullets: [
-          "Co-diseño curricular aplicado",
+          "Co-diseño curricular con prompts y rúbricas",
           "Gemelos pedagógicos por docente",
           "Mentoría por cohortes",
-          "Métricas por nivel y por área",
+          "Métricas por área y nivel"
         ],
-        cta: "Quiero una propuesta académica",
+        cta: "Hola, soy Coordinador Académico y quiero una propuesta personalizada."
       },
       {
+        key: "marketing",
         color: "pink",
         icon: "megaphone",
         tag: "Marketing y Admisiones",
         title: "Contenido auténtico para captar alumnos",
-        desc: "Transforma proyectos, testimonios y experiencias de aula en contenido diferenciador para campañas y recorridos.",
+        desc: "Transforma innovación real en historias, evidencias y activos para campañas y recorridos.",
         bullets: [
           "Banco de historias y testimonios",
           "Calendario editorial basado en evidencias",
-          "Mensajes para campañas y visitas",
-          "Narrativa clara de innovación",
+          "Mensajes diferenciados para recorridos",
+          "Narrativa clara de innovación"
         ],
-        cta: "Quiero contenido que convierta",
+        cta: "Hola, soy de Marketing y quiero generar contenido de IA."
       },
       {
+        key: "docentes",
         color: "green",
         icon: "sparkles",
         tag: "Docentes Líderes",
         title: "Tu asistente IA respetando tu estilo",
-        desc: "Crea tu gemelo pedagógico, ahorra tiempo y mejora la calidad de tus estrategias didácticas.",
+        desc: "Crea tu gemelo pedagógico y ahorra tiempo sin perder tu identidad docente.",
         bullets: [
-          "Asistente entrenado con tus planeaciones",
+          "Asistente alineado a tu materia",
           "Plantillas listas para clase",
           "Acompañamiento práctico",
-          "Ruta para convertirte en embajador IA",
+          "Ruta para convertirte en referente"
         ],
-        cta: "Quiero probar mi gemelo IA",
-      },
+        cta: "Hola, soy docente y quiero probar mi gemelo pedagógico."
+      }
     ];
 
-    const RESOURCES = [
+    const TOOLS = [
       {
-        icon: "file-text",
-        title: "Checklist de integración",
-        url: "https://drive.google.com/file/d/1nl9RsntRnoLHsVWAfc-r75cJK2SzglQQ/view?usp=sharing",
+        icon: "brain",
+        title: "Gemelos pedagógicos",
+        desc: "Asistentes personalizados para planear, diseñar y mejorar clases."
       },
       {
-        icon: "book-open",
-        title: "Syllabus editable",
-        url: "https://drive.google.com/file/d/1Nmraa7jcUPVK6btiPA4h9u7Pc95fY38X/view?usp=sharing",
+        icon: "file-stack",
+        title: "Rúbricas y evaluación",
+        desc: "Diseño de instrumentos, criterios y evidencias con apoyo de IA."
       },
       {
-        icon: "compass",
-        title: "Guía para directivos",
-        url: "https://drive.google.com/file/d/1YHYzm7ZdFKomp4nzRcNjJ7pJlwatfhhg/view?usp=sharing",
+        icon: "workflow",
+        title: "Flujos administrativos",
+        desc: "Optimización de tareas repetitivas y acompañamiento a equipos."
       },
+      {
+        icon: "shield",
+        title: "Protocolos éticos",
+        desc: "Bases institucionales para un uso seguro, claro y responsable."
+      }
     ];
 
     const TESTIMONIALS = [
@@ -212,81 +222,48 @@
         name: "Lic. Wendy Barroso",
         role: "Asoc. Mexicana Éxito PYME",
         quote: "Su curso de IA fue una experiencia enriquecedora y muy accesible.",
-        color: "bg-green-600",
+        color: "bg-green-600"
       },
       {
         initial: "CG",
         name: "Mtra. Carol G.",
         role: "Educación Básica",
         quote: "Ahora puedo enfocarme más en la enseñanza y menos en la preparación.",
-        color: "bg-blue-600",
+        color: "bg-blue-600"
       },
       {
         initial: "EC",
         name: "Doctorante Esmeralda Cofradía",
         role: "Profesionista",
         quote: "Combina teoría, práctica y herramientas muy útiles para el trabajo profesional.",
-        color: "bg-pink-600",
+        color: "bg-pink-600"
       },
       {
         initial: "AR",
         name: "Mtra. Anabel Rodríguez",
         role: "Dirección Académica",
         quote: "Incorporamos la IA en la currícula y el acompañamiento fue muy valioso.",
-        color: "bg-purple-600",
+        color: "bg-purple-600"
       },
       {
         initial: "AB",
         name: "Mtro. Antonio Betancourt",
         role: "UPN",
         quote: "Excelente facilitación en uso ético y estratégico de la IA en investigación.",
-        color: "bg-orange-600",
-      },
+        color: "bg-orange-600"
+      }
     ];
-
-    const QUIZZES = {
-      diagnostico: {
-        title: "Diagnóstico de Madurez IA",
-        intro: "Descubre tu nivel de adopción y obtén una hoja de ruta sugerida.",
-        accent: "green",
-        questions: [
-          "¿Tu institución tiene objetivos claros para integrar IA este año?",
-          "¿Los docentes usan IA semanalmente para planificar clases?",
-          "¿Dirección utiliza datos o simulaciones para tomar decisiones?",
-          "¿Existen proyectos visibles de IA para comunidad o padres?",
-          "¿Se han automatizado tareas administrativas con IA?",
-          "¿Hay presupuesto o herramientas definidas para este proceso?",
-          "¿Se usa IA para personalización del aprendizaje?",
-          "¿Cuentan con asistentes o gemelos pedagógicos para docentes?",
-        ],
-      },
-      auditoria: {
-        title: "Auditoría Ética IA",
-        intro: "Evalúa protocolos mínimos de seguridad, ética y privacidad para el uso institucional de IA.",
-        accent: "blue",
-        questions: [
-          "¿Existe una política clara sobre uso de IA en la escuela?",
-          "¿Los docentes han sido informados sobre sesgos y riesgos?",
-          "¿Se cuidan datos personales antes de usar herramientas externas?",
-          "¿Hay criterios para distinguir uso asistido y plagio?",
-          "¿Se informa a familias sobre herramientas utilizadas?",
-          "¿Existe supervisión humana en retroalimentación o evaluación?",
-          "¿Se revisan términos y privacidad de las apps usadas?",
-          "¿Hay un canal para reportar usos indebidos?",
-        ],
-      },
-    };
 
     function cx(...items) {
       return items.filter(Boolean).join(" ");
     }
 
-    function getWhatsAppLink(text) {
+    function wa(text) {
       return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
     }
 
     function ensureClientifyLoaded() {
-      if (window.__clientify_loading || window.__clientify_loaded) return;
+      if (window.__clientify_loaded || window.__clientify_loading) return;
       window.__clientify_loading = true;
       window.__clientify_queue = window.__clientify_queue || [];
 
@@ -341,265 +318,23 @@
       );
     }
 
-    function SectionTitle({ eyebrow, title, accent = "green", desc }) {
+    function SectionTitle({ eyebrow, title, desc, accent = "green" }) {
       const accentClass =
         accent === "yellow"
           ? "text-yellow-400"
           : accent === "blue"
           ? "text-blue-400"
-          : accent === "pink"
-          ? "text-pink-400"
           : "text-green-400";
 
       return (
         <div className="text-center max-w-3xl mx-auto mb-14 animate-fade-in">
           {eyebrow && (
-            <div className={cx("text-xs uppercase tracking-[0.25em] mb-4 font-semibold", accentClass)}>
+            <div className={cx("text-xs uppercase tracking-[0.3em] font-bold mb-4", accentClass)}>
               {eyebrow}
             </div>
           )}
-          <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
-            {title}
-          </h2>
+          <h2 className="text-3xl md:text-5xl font-black text-white">{title}</h2>
           {desc && <p className="text-gray-400 text-lg mt-5">{desc}</p>}
-        </div>
-      );
-    }
-
-    function QuizModal({ type, open, onClose }) {
-      const quiz = QUIZZES[type];
-      const [step, setStep] = useState(0);
-      const [score, setScore] = useState(0);
-
-      useEffect(() => {
-        if (open) {
-          setStep(0);
-          setScore(0);
-        }
-      }, [open, type]);
-
-      if (!open || !quiz) return null;
-
-      const total = quiz.questions.length;
-      const done = step >= total;
-
-      const handleAnswer = (yes) => {
-        if (yes) setScore((s) => s + 1);
-        setStep((s) => s + 1);
-      };
-
-      const getResult = () => {
-        if (type === "auditoria") {
-          if (score <= 3) {
-            return {
-              level: "Riesgo Alto",
-              color: "text-red-400",
-              bar: "bg-red-500",
-              text: "Necesitas protocolos urgentes de uso, privacidad y supervisión humana.",
-              cta: "Quiero una auditoría ética completa",
-            };
-          }
-          if (score <= 6) {
-            return {
-              level: "En proceso",
-              color: "text-yellow-400",
-              bar: "bg-yellow-500",
-              text: "Ya existen bases, pero aún falta formalizar lineamientos y criterios institucionales.",
-              cta: "Quiero fortalecer mis protocolos",
-            };
-          }
-          return {
-            level: "Base sólida",
-            color: "text-blue-400",
-            bar: "bg-blue-500",
-            text: "Tu institución muestra una base seria para una implementación responsable de IA.",
-            cta: "Quiero una validación experta",
-          };
-        }
-
-        if (score <= 3) {
-          return {
-            level: "Inicio Digital",
-            color: "text-red-400",
-            bar: "bg-red-500",
-            text: "Conviene empezar con sensibilización, quick wins y reglas base.",
-            cta: "Quiero empezar con una ruta sencilla",
-          };
-        }
-        if (score <= 6) {
-          return {
-            level: "En Transición",
-            color: "text-yellow-400",
-            bar: "bg-yellow-500",
-            text: "Tu institución tiene potencial, pero necesita estandarización, acompañamiento y visión integral.",
-            cta: "Quiero una propuesta institucional",
-          };
-        }
-        return {
-          level: "Escuela Innovadora",
-          color: "text-green-400",
-          bar: "bg-green-500",
-          text: "Ya cuentan con bases fuertes para escalar hacia liderazgo educativo con IA.",
-          cta: "Quiero potenciar el siguiente nivel",
-        };
-      };
-
-      const result = getResult();
-      const progress = total ? Math.round((step / total) * 100) : 0;
-      const buttonClass =
-        quiz.accent === "blue"
-          ? "from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500"
-          : "from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500";
-
-      const accentText = quiz.accent === "blue" ? "text-blue-400" : "text-green-400";
-      const accentSoft = quiz.accent === "blue" ? "bg-blue-500/10 border-blue-500/30" : "bg-green-500/10 border-green-500/30";
-      const progressBar = quiz.accent === "blue" ? "bg-blue-500" : "bg-green-500";
-
-      return (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl glass rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-            <div className={cx("h-1 bg-gradient-to-r", buttonClass)}></div>
-            <div className="p-6 md:p-8 relative">
-              <button
-                onClick={onClose}
-                className="absolute right-4 top-4 text-gray-400 hover:text-white transition"
-                aria-label="Cerrar"
-              >
-                <Icon name="x" size={22} />
-              </button>
-
-              {!done && step === 0 && (
-                <div className="text-center py-6 animate-fade-in">
-                  <div className={cx("mx-auto w-20 h-20 rounded-full flex items-center justify-center border mb-6", accentSoft)}>
-                    <Icon name={type === "auditoria" ? "shield-check" : "brain"} className={accentText} size={34} />
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-black text-white mb-4">{quiz.title}</h3>
-                  <p className="text-gray-300 mb-8 max-w-xl mx-auto">{quiz.intro}</p>
-                  <button
-                    onClick={() => setStep(1)}
-                    className={cx("px-8 py-4 rounded-xl text-white font-bold bg-gradient-to-r transition transform hover:scale-[1.02]", buttonClass)}
-                  >
-                    Iniciar
-                  </button>
-                </div>
-              )}
-
-              {!done && step > 0 && (
-                <div className="animate-fade-in">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-gray-400 mb-4">
-                    <span>Pregunta {step} de {total}</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-gray-800 mb-8 overflow-hidden">
-                    <div
-                      className={cx("h-full rounded-full transition-all duration-300", progressBar)}
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-
-                  <div className="min-h-[140px] flex items-center justify-center text-center mb-8">
-                    <h4 className="text-xl md:text-2xl font-semibold text-white">
-                      {quiz.questions[step - 1]}
-                    </h4>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button
-                      onClick={() => handleAnswer(false)}
-                      className="py-4 rounded-xl border border-white/15 hover:border-red-500 hover:bg-red-500/10 transition font-bold"
-                    >
-                      No
-                    </button>
-                    <button
-                      onClick={() => handleAnswer(true)}
-                      className={cx("py-4 rounded-xl text-white font-bold bg-gradient-to-r transition", buttonClass)}
-                    >
-                      Sí
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {done && (
-                <div className="animate-fade-in text-center">
-                  <div className="w-24 h-24 mx-auto rounded-full border border-white/10 bg-slate-900 flex items-center justify-center mb-5 text-3xl font-black text-white">
-                    {score}/{total}
-                  </div>
-                  <div className={cx("text-2xl md:text-3xl font-black mb-3", result.color)}>
-                    {result.level}
-                  </div>
-                  <p className="text-gray-300 mb-6 max-w-xl mx-auto">{result.text}</p>
-                  <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mb-8">
-                    <div
-                      className={cx("h-full rounded-full", result.bar)}
-                      style={{ width: `${Math.round((score / total) * 100)}%` }}
-                    ></div>
-                  </div>
-                  <a
-                    href={getWhatsAppLink(`Hola, completé el ${quiz.title} y deseo seguimiento. Resultado: ${result.level}.`)}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => trackClientify("quiz_whatsapp_click", {
-                      quiz: quiz.title,
-                      result: result.level,
-                      score,
-                    })}
-                    className={cx("inline-flex items-center gap-2 px-7 py-4 rounded-xl text-white font-bold bg-gradient-to-r transition hover:scale-[1.02]", buttonClass)}
-                  >
-                    <Icon name="message-circle" size={20} />
-                    {result.cta}
-                  </a>
-                  <div className="mt-4">
-                    <button onClick={onClose} className="text-gray-400 hover:text-white underline">
-                      Cerrar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function TestimonialCarousel() {
-      const [index, setIndex] = useState(0);
-
-      useEffect(() => {
-        const timer = setInterval(() => {
-          setIndex((prev) => (prev + 1) % TESTIMONIALS.length);
-        }, 5000);
-        return () => clearInterval(timer);
-      }, []);
-
-      const current = TESTIMONIALS[index];
-
-      return (
-        <div className="max-w-4xl mx-auto">
-          <div className="glass rounded-3xl p-8 md:p-10 min-h-[280px] flex flex-col justify-center text-center">
-            <div className={cx("w-16 h-16 mx-auto rounded-full flex items-center justify-center text-white font-black text-xl mb-5", current.color)}>
-              {current.initial}
-            </div>
-            <p className="text-xl md:text-2xl italic text-gray-100 leading-relaxed mb-6">
-              “{current.quote}”
-            </p>
-            <div className="font-bold text-white text-lg">{current.name}</div>
-            <div className="text-green-400 text-sm mt-1">{current.role}</div>
-          </div>
-
-          <div className="flex justify-center gap-3 mt-6">
-            {TESTIMONIALS.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setIndex(i)}
-                aria-label={`Ir al testimonio ${i + 1}`}
-                className={cx(
-                  "h-3 rounded-full transition-all",
-                  i === index ? "w-8 bg-green-500" : "w-3 bg-gray-600 hover:bg-gray-500"
-                )}
-              ></button>
-            ))}
-          </div>
         </div>
       );
     }
@@ -609,26 +344,24 @@
       const width = 320;
       const height = 110;
 
-      const points = data
-        .map((d, i) => {
-          const x = (i / (data.length - 1)) * width;
-          const y = height - (d / 30) * height;
-          return `${x},${y}`;
-        })
-        .join(" ");
+      const points = data.map((d, i) => {
+        const x = (i / (data.length - 1)) * width;
+        const y = height - (d / 30) * height;
+        return `${x},${y}`;
+      }).join(" ");
 
       return (
         <svg width="100%" height="110" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
           <defs>
             <linearGradient id="lineGradient" x1="0" y1="0" x2="320" y2="0">
               <stop offset="0%" stopColor="#4ade80" />
-              <stop offset="100%" stopColor="#14b8a6" />
+              <stop offset="100%" stopColor="#0d9488" />
             </linearGradient>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feGaussianBlur stdDeviation="2.5" result="blur"></feGaussianBlur>
               <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
+                <feMergeNode in="blur"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
               </feMerge>
             </filter>
           </defs>
@@ -650,17 +383,311 @@
       );
     }
 
+    function DemoVideo() {
+      const driveViewLink = "https://drive.google.com/file/d/1j35klu2xA5WJfSWIlM1NacqqT01X4sR/view?usp=sharing";
+      const driveEmbedLink = "https://drive.google.com/file/d/1j35klu2xA5WJfSWIlM1NacqqT01X4sR/preview";
+
+      return (
+        <div className="w-full max-w-5xl mx-auto relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-900 border border-white/10 shadow-2xl z-10">
+            <iframe
+              className="w-full h-full absolute inset-0"
+              src={driveEmbedLink}
+              title="Demo Edu IA 360"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              style={{ border: "none" }}
+            ></iframe>
+          </div>
+          <div className="text-center mt-6 flex flex-col items-center gap-3">
+            <p className="text-sm text-gray-400">Si no carga, Drive puede requerir cookies.</p>
+            <a
+              href={driveViewLink}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackClientify("external_link_click", { source: "demo_drive" })}
+              className="inline-flex items-center gap-2 text-base font-bold text-white bg-green-600 hover:bg-green-500 px-8 py-3 rounded-full shadow-lg transition-all"
+            >
+              <Icon name="play" size={18} className="text-white" />
+              Ver en Drive
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    function TestimonialCarousel() {
+      const [currentIndex, setCurrentIndex] = useState(0);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+        }, 5000);
+        return () => clearInterval(interval);
+      }, []);
+
+      const current = TESTIMONIALS[currentIndex];
+
+      return (
+        <div className="max-w-4xl mx-auto">
+          <div className="glass p-8 md:p-10 rounded-3xl text-center min-h-[280px] flex flex-col justify-center">
+            <div className={cx("w-16 h-16 mx-auto rounded-full flex items-center justify-center text-white font-black text-xl mb-5", current.color)}>
+              {current.initial}
+            </div>
+            <p className="italic text-gray-200 text-xl md:text-2xl mb-6 leading-relaxed">
+              “{current.quote}”
+            </p>
+            <p className="font-bold text-white text-lg">{current.name}</p>
+            <p className="text-sm text-green-400 mt-1">{current.role}</p>
+          </div>
+
+          <div className="flex justify-center gap-3 mt-6">
+            {TESTIMONIALS.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                className={cx(
+                  "h-3 rounded-full transition-all duration-300",
+                  idx === currentIndex ? "w-8 bg-green-500" : "w-3 bg-gray-600 hover:bg-gray-400"
+                )}
+                aria-label={`Ir al testimonio ${idx + 1}`}
+              ></button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function QuizModal({ open, onClose, type }) {
+      const isAudit = type === "audit";
+      const questions = isAudit
+        ? [
+            "¿Tu escuela tiene una política clara sobre el uso de IA?",
+            "¿Se informa a familias qué herramientas de IA se utilizan?",
+            "¿Se protegen los datos personales antes de usar herramientas externas?",
+            "¿Los docentes han recibido formación sobre sesgos y riesgos?",
+            "¿Existe un criterio para distinguir uso asistido y plagio?",
+            "¿Se revisan términos de privacidad de las apps utilizadas?",
+            "¿Hay supervisión humana en retroalimentación y evaluación?",
+            "¿Existe un canal para reportar usos indebidos?"
+          ]
+        : [
+            "¿Tu colegio tiene objetivos estratégicos definidos para IA este año?",
+            "¿Los docentes usan IA semanalmente para planificar clases?",
+            "¿Existen proyectos visibles de IA para padres y comunidad?",
+            "¿La dirección usa datos o simulaciones para tomar decisiones?",
+            "¿Se han automatizado tareas administrativas con IA?",
+            "¿Hay presupuesto asignado para herramientas de IA?",
+            "¿Se usa IA para personalizar el aprendizaje?",
+            "¿Cuentan con gemelos pedagógicos para docentes?"
+          ];
+
+      const [step, setStep] = useState(0);
+      const [score, setScore] = useState(0);
+
+      useEffect(() => {
+        if (open) {
+          setStep(0);
+          setScore(0);
+        }
+      }, [open, type]);
+
+      if (!open) return null;
+
+      const total = questions.length;
+      const finished = step >= total;
+
+      const accentButton = isAudit
+        ? "bg-blue-600 hover:bg-blue-500"
+        : "bg-green-600 hover:bg-green-500";
+
+      const accentBar = isAudit ? "bg-blue-500" : "bg-green-500";
+      const accentText = isAudit ? "text-blue-400" : "text-green-400";
+      const accentBorder = isAudit ? "border-blue-500/30 bg-blue-500/10" : "border-green-500/30 bg-green-500/10";
+
+      function handleAnswer(yes) {
+        if (yes) setScore((s) => s + 1);
+        setStep((s) => s + 1);
+      }
+
+      function getResult() {
+        if (isAudit) {
+          if (score <= 3) {
+            return {
+              level: "Riesgo Alto",
+              color: "text-red-400",
+              text: "Necesitas protocolos urgentes de ética, privacidad y supervisión humana."
+            };
+          }
+          if (score <= 6) {
+            return {
+              level: "En proceso",
+              color: "text-yellow-400",
+              text: "Ya existen bases, pero hace falta institucionalizar criterios y procedimientos."
+            };
+          }
+          return {
+            level: "Base sólida",
+            color: "text-blue-400",
+            text: "Tu institución muestra una base seria para una adopción responsable de IA."
+          };
+        }
+
+        if (score <= 3) {
+          return {
+            level: "Inicio Digital",
+            color: "text-red-400",
+            text: "Lo ideal es empezar con quick wins, sensibilización y reglas base."
+          };
+        }
+        if (score <= 6) {
+          return {
+            level: "En Transición",
+            color: "text-yellow-400",
+            text: "Hay voluntad y herramientas, pero hace falta estrategia integral."
+          };
+        }
+        return {
+          level: "Escuela Innovadora",
+          color: "text-green-400",
+          text: "Tu institución ya cuenta con bases para escalar e innovar con más fuerza."
+        };
+      }
+
+      const progress = Math.round((step / total) * 100);
+      const result = getResult();
+      const title = isAudit ? "Auditoría Ética IA" : "Diagnóstico de Madurez IA";
+      const icon = isAudit ? "shield-check" : "brain";
+
+      return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+          <div className="glass rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden">
+            <div className={cx("h-1", accentBar)}></div>
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
+              aria-label="Cerrar"
+            >
+              <Icon name="x" size={22} />
+            </button>
+
+            <div className="p-8">
+              {!finished && step === 0 && (
+                <div className="text-center space-y-6 animate-fade-in">
+                  <div className={cx("w-20 h-20 rounded-full flex items-center justify-center mx-auto border", accentBorder)}>
+                    <Icon name={icon} size={36} className={accentText} />
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-black text-white">{title}</h3>
+                  <p className="text-gray-300">
+                    {isAudit
+                      ? "Evalúa si tu institución cuenta con bases mínimas de uso ético y seguro."
+                      : "Descubre tu nivel de adopción tecnológica y obtén una ruta sugerida."}
+                  </p>
+                  <button
+                    onClick={() => setStep(1)}
+                    className={cx("px-8 py-4 rounded-xl font-bold text-white transition", accentButton)}
+                  >
+                    Iniciar
+                  </button>
+                </div>
+              )}
+
+              {!finished && step > 0 && (
+                <div className="space-y-8 animate-fade-in">
+                  <div className="flex justify-between text-xs uppercase tracking-[0.25em] text-gray-400">
+                    <span>Pregunta {step} de {total}</span>
+                    <span>{progress}%</span>
+                  </div>
+
+                  <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className={cx("h-full rounded-full transition-all duration-300", accentBar)} style={{ width: `${progress}%` }}></div>
+                  </div>
+
+                  <h4 className="text-xl md:text-2xl font-medium text-white min-h-[100px] flex items-center justify-center text-center">
+                    {questions[step - 1]}
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      onClick={() => handleAnswer(false)}
+                      className="py-4 rounded-xl border border-gray-600 hover:border-red-500 hover:bg-red-500/10 text-gray-200 transition font-bold"
+                    >
+                      No
+                    </button>
+                    <button
+                      onClick={() => handleAnswer(true)}
+                      className={cx("py-4 rounded-xl text-white transition font-bold", accentButton)}
+                    >
+                      Sí
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {finished && (
+                <div className="text-center space-y-6 animate-fade-in">
+                  <div className="w-24 h-24 mx-auto rounded-full border border-white/10 bg-gray-900 flex items-center justify-center text-3xl font-black text-white">
+                    {score}/{total}
+                  </div>
+                  <div className={cx("text-3xl font-black", result.color)}>{result.level}</div>
+                  <p className="text-gray-300 max-w-xl mx-auto">{result.text}</p>
+
+                  <a
+                    href={wa(`Hola, completé el ${title} y deseo seguimiento. Resultado: ${result.level}.`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => trackClientify("quiz_whatsapp_click", {
+                      quiz: title,
+                      score,
+                      result: result.level
+                    })}
+                    className={cx("inline-flex items-center gap-2 px-8 py-4 rounded-xl text-white font-bold transition", accentButton)}
+                  >
+                    <Icon name="message-circle" size={18} />
+                    Solicitar seguimiento
+                  </a>
+
+                  <div>
+                    <button onClick={onClose} className="text-gray-500 hover:text-white underline">
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function BackToTop() {
+      return (
+        <div className="flex justify-end mt-8">
+          <a
+            href="#inicio"
+            onClick={() => trackClientify("cta_click", { label: "volver_inicio" })}
+            className="group flex items-center gap-2 text-sm text-green-400 hover:text-white transition-all opacity-80 hover:opacity-100"
+          >
+            <Icon name="arrow-up" size={16} />
+            Volver al inicio
+          </a>
+        </div>
+      );
+    }
+
     function App() {
       const [mobileOpen, setMobileOpen] = useState(false);
-      const [contactSuccess, setContactSuccess] = useState(false);
-      const [quizOpen, setQuizOpen] = useState({ diagnostico: false, auditoria: false });
+      const [diagnosticOpen, setDiagnosticOpen] = useState(false);
+      const [auditOpen, setAuditOpen] = useState(false);
+      const [success, setSuccess] = useState(false);
       const [form, setForm] = useState({
         nombre: "",
         email: "",
         institucion: "",
         telefono: "",
         servicio: "",
-        mensaje: "",
+        mensaje: ""
       });
 
       useEffect(() => {
@@ -675,12 +702,11 @@
         }
       });
 
-      const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value }));
-      };
+      function onChange(e) {
+        setForm({ ...form, [e.target.name]: e.target.value });
+      }
 
-      const submitContact = (e) => {
+      function onSubmit(e) {
         e.preventDefault();
 
         if (!form.nombre || !form.email || !form.institucion) {
@@ -688,84 +714,81 @@
           return;
         }
 
-        const payload = {
+        trackClientify("lead", {
           source: "eduia360_landing",
           nombre: form.nombre,
           email: form.email,
           institucion: form.institucion,
           telefono: form.telefono,
-          servicio: form.servicio,
-        };
+          servicio: form.servicio
+        });
 
-        trackClientify("lead", payload);
-
-        const text = [
+        const message = [
           "Hola, quiero información de Edu IA 360.",
           `Nombre: ${form.nombre}`,
-          `Email: ${form.email}`,
+          `Correo: ${form.email}`,
           `Institución: ${form.institucion}`,
           `Teléfono: ${form.telefono || "No compartido"}`,
-          `Servicio de interés: ${form.servicio || "No especificado"}`,
-          `Mensaje: ${form.mensaje || "Sin mensaje adicional"}`,
+          `Servicio: ${form.servicio || "No especificado"}`,
+          `Mensaje: ${form.mensaje || "Sin mensaje adicional"}`
         ].join("\n");
 
-        setContactSuccess(true);
-        window.open(getWhatsAppLink(text), "_blank");
-      };
+        setSuccess(true);
+        window.open(wa(message), "_blank");
+      }
 
-      const heroCtas = useMemo(() => ([
-        {
-          label: "Ver propuesta",
-          href: "#planes",
-          onClick: () => trackClientify("cta_click", { label: "hero_ver_propuesta" }),
-          primary: true,
-        },
-        {
-          label: "Diagnóstico IA",
-          action: () => {
-            trackClientify("cta_click", { label: "hero_diagnostico" });
-            setQuizOpen((s) => ({ ...s, diagnostico: true }));
-          },
-        },
-        {
-          label: "Auditoría ética",
-          action: () => {
-            trackClientify("cta_click", { label: "hero_auditoria" });
-            setQuizOpen((s) => ({ ...s, auditoria: true }));
-          },
-        },
-      ]), []);
+      function colorStyles(color) {
+        if (color === "yellow") {
+          return {
+            soft: "bg-yellow-500/10 border-yellow-500/25",
+            text: "text-yellow-400",
+            btn: "bg-yellow-600 hover:bg-yellow-500"
+          };
+        }
+        if (color === "blue") {
+          return {
+            soft: "bg-blue-500/10 border-blue-500/25",
+            text: "text-blue-400",
+            btn: "bg-blue-600 hover:bg-blue-500"
+          };
+        }
+        if (color === "pink") {
+          return {
+            soft: "bg-pink-500/10 border-pink-500/25",
+            text: "text-pink-400",
+            btn: "bg-pink-600 hover:bg-pink-500"
+          };
+        }
+        return {
+          soft: "bg-green-500/10 border-green-500/25",
+          text: "text-green-400",
+          btn: "bg-green-600 hover:bg-green-500"
+        };
+      }
 
       return (
-        <div className="min-h-screen bg-slate-950 text-gray-100 overflow-x-hidden">
-          <QuizModal
-            type="diagnostico"
-            open={quizOpen.diagnostico}
-            onClose={() => setQuizOpen((s) => ({ ...s, diagnostico: false }))}
-          />
-          <QuizModal
-            type="auditoria"
-            open={quizOpen.auditoria}
-            onClose={() => setQuizOpen((s) => ({ ...s, auditoria: false }))}
-          />
+        <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
+          <div className="fixed inset-0 -z-10 grid-bg opacity-40"></div>
 
-          <div className="fixed inset-0 -z-10 grid-bg opacity-50"></div>
+          <QuizModal open={diagnosticOpen} onClose={() => setDiagnosticOpen(false)} type="diagnostic" />
+          <QuizModal open={auditOpen} onClose={() => setAuditOpen(false)} type="audit" />
 
-          <nav className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+          <div className="hidden text-green-400 text-blue-400 text-yellow-400 text-pink-400 bg-green-600 bg-blue-600 bg-yellow-600 bg-pink-600 border-green-500 border-blue-500 border-yellow-500 border-pink-500"></div>
+
+          <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/80 backdrop-blur-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
               <a
                 href="#inicio"
                 onClick={() => trackClientify("nav_click", { section: "inicio" })}
                 className="flex items-center gap-3"
               >
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-green-400 to-blue-600 p-[1px]">
-                  <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-xl">
-                    ✦
-                  </div>
+                <div className="relative w-10 h-10">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-teal-600 rounded-full opacity-80 blur-[2px] animate-pulse"></div>
+                  <div className="absolute inset-1 bg-black rounded-full flex items-center justify-center text-lg">✦</div>
                 </div>
-                <div className="text-xl font-black tracking-tight text-white">
+                <span className="text-xl font-black tracking-tight text-white">
                   Edu IA <span className="text-green-400">360</span>
-                </div>
+                </span>
               </a>
 
               <div className="hidden xl:flex items-center gap-2">
@@ -774,7 +797,7 @@
                     key={link.name}
                     href={link.href}
                     onClick={() => trackClientify("nav_click", { section: link.name })}
-                    className="px-4 py-2 rounded-full text-sm font-medium text-gray-200 hover:text-white hover:bg-white/5 transition"
+                    className="text-sm font-medium text-gray-200 hover:text-white hover:bg-green-500/10 px-4 py-2 rounded-full transition"
                   >
                     {link.name}
                   </a>
@@ -782,133 +805,111 @@
                 <a
                   href="#contacto"
                   onClick={() => trackClientify("cta_click", { label: "nav_contacto" })}
-                  className="ml-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white font-bold transition"
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white border border-green-500/30 px-6 py-2 rounded-full text-sm font-bold transition ml-2"
                 >
                   Contacto
                 </a>
               </div>
 
               <button
-                onClick={() => setMobileOpen((s) => !s)}
-                className="xl:hidden p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="xl:hidden text-white p-2.5 rounded-lg bg-gradient-to-r from-green-600 to-teal-600 border border-green-400/30 transition"
                 aria-label="Abrir menú"
               >
-                <Icon name={mobileOpen ? "x" : "menu"} size={22} className="text-white" />
+                <Icon name={mobileOpen ? "x" : "menu"} size={26} />
               </button>
             </div>
 
             {mobileOpen && (
-              <div className="xl:hidden border-t border-white/10 bg-black/90 backdrop-blur-xl">
-                <div className="px-4 py-4 flex flex-col gap-2">
-                  {NAV_LINKS.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      onClick={() => {
-                        setMobileOpen(false);
-                        trackClientify("nav_click", { section: link.name });
-                      }}
-                      className="px-4 py-3 rounded-xl text-gray-200 hover:bg-white/5"
-                    >
-                      {link.name}
-                    </a>
-                  ))}
-                </div>
+              <div className="xl:hidden absolute top-20 right-0 w-full sm:w-80 bg-black/95 border-l border-b border-green-500/30 h-[calc(100vh-5rem)] flex flex-col p-6 space-y-4">
+                {NAV_LINKS.map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => {
+                      setMobileOpen(false);
+                      trackClientify("nav_click", { section: link.name });
+                    }}
+                    className="block px-4 py-3 rounded-xl text-lg font-medium text-gray-200 hover:bg-green-500/10"
+                  >
+                    {link.name}
+                  </a>
+                ))}
               </div>
             )}
           </nav>
 
-          <section id="inicio" className="relative pt-28 md:pt-32 min-h-screen flex items-center">
+          <section id="inicio" className="relative min-h-screen overflow-hidden pt-24 pb-12 lg:py-0 flex items-center">
             <div className="absolute inset-0 -z-10">
               <div className="absolute left-1/2 top-24 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-green-500/10 blur-3xl"></div>
-              <div className="absolute right-10 top-40 w-[320px] h-[320px] rounded-full bg-blue-500/10 blur-3xl"></div>
+              <div className="absolute right-10 top-40 w-[260px] h-[260px] rounded-full bg-teal-500/10 blur-3xl"></div>
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-              <div className="grid lg:grid-cols-2 gap-14 items-center">
-                <div className="animate-fade-in">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-300 text-xs uppercase tracking-[0.25em] font-bold mb-6">
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              <div className="grid lg:grid-cols-2 gap-16 items-center w-full">
+                <div className="space-y-8 animate-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/60 border border-green-500/50 text-green-300 text-xs font-mono uppercase tracking-[0.25em]">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
                     Nueva generación educativa
                   </div>
 
-                  <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black text-white leading-[1.05] mb-6">
-                    IA integral aplicada para{" "}
+                  <h1 className="text-5xl md:text-6xl font-black leading-tight text-white">
+                    IA integral aplicada para <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 glow-text">
                       docentes y escuelas
                     </span>
                   </h1>
 
-                  <p className="text-lg md:text-xl text-gray-300 max-w-2xl leading-relaxed border-l-4 border-green-500 pl-5 mb-8">
-                    Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas,
-                    con enfoque pedagógico, estratégico y ético.
+                  <p className="text-xl text-gray-200 max-w-lg leading-relaxed border-l-4 border-green-500 pl-6">
+                    Más tiempo, clases más activas y evidencias de aprendizaje en 8 semanas.
                   </p>
 
-                  <div className="flex flex-wrap gap-4">
-                    {heroCtas.map((cta) =>
-                      cta.href ? (
-                        <a
-                          key={cta.label}
-                          href={cta.href}
-                          onClick={cta.onClick}
-                          className={cx(
-                            "px-7 py-4 rounded-xl font-bold transition transform hover:scale-[1.02]",
-                            cta.primary
-                              ? "bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white"
-                              : "bg-white/5 border border-white/10 hover:bg-white/10 text-white"
-                          )}
-                        >
-                          {cta.label}
-                        </a>
-                      ) : (
-                        <button
-                          key={cta.label}
-                          onClick={cta.action}
-                          className="px-7 py-4 rounded-xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 text-white transition transform hover:scale-[1.02]"
-                        >
-                          {cta.label}
-                        </button>
-                      )
-                    )}
-                  </div>
+                  <div className="flex flex-wrap gap-4 pt-2">
+                    <a
+                      href="#planes"
+                      onClick={() => trackClientify("cta_click", { label: "hero_ver_propuesta" })}
+                      className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-[1.02] transition flex gap-2 items-center"
+                    >
+                      Ver Propuesta
+                      <Icon name="chevron-right" size={18} />
+                    </a>
 
-                  <div className="grid sm:grid-cols-3 gap-4 mt-10">
-                    {[
-                      "Ahorro de 6-8 horas semanales",
-                      "Rutas por rol e institución",
-                      "Implementación ética y medible",
-                    ].map((item) => (
-                      <div key={item} className="glass rounded-2xl p-4 text-sm text-gray-300">
-                        {item}
-                      </div>
-                    ))}
+                    <button
+                      onClick={() => {
+                        setDiagnosticOpen(true);
+                        trackClientify("cta_click", { label: "hero_diagnostico" });
+                      }}
+                      className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10 transition"
+                    >
+                      <Icon name="sparkles" size={18} />
+                      Diagnóstico IA
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setAuditOpen(true);
+                        trackClientify("cta_click", { label: "hero_auditoria" });
+                      }}
+                      className="px-8 py-4 bg-black/40 border border-blue-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-blue-500/10 transition"
+                    >
+                      <Icon name="shield" size={18} />
+                      Auditoría ética
+                    </button>
                   </div>
                 </div>
 
-                <div className="hidden lg:block">
-                  <div className="glass rounded-[28px] p-6 border border-white/10 shadow-2xl">
-                    <div className="rounded-[22px] border border-white/10 bg-slate-950/70 p-8 relative overflow-hidden">
-                      <div className="absolute top-4 right-4 w-28 h-28 bg-green-500/20 blur-3xl rounded-full"></div>
-                      <div className="text-6xl mb-4 animate-float">🚀</div>
-                      <h3 className="text-3xl font-black text-white mb-2">Resultados en 8 semanas</h3>
-                      <p className="text-gray-400 mb-6">Ruta guiada para docentes, coordinación y dirección.</p>
-                      <div className="glass rounded-2xl p-4 border border-white/10">
-                        <StatsGraph />
-                        <div className="flex justify-between text-xs text-gray-500 mt-2">
-                          <span>Semana 1</span>
-                          <span className="text-green-400">Proyección</span>
-                          <span>Semana 8</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 mt-5">
-                        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4">
-                          <div className="text-2xl font-black text-white">+ Productividad</div>
-                          <div className="text-sm text-gray-400 mt-1">Planeación, rúbricas y seguimiento</div>
-                        </div>
-                        <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4">
-                          <div className="text-2xl font-black text-white">+ Innovación</div>
-                          <div className="text-sm text-gray-400 mt-1">Práctica visible y diferenciadora</div>
-                        </div>
+                <div className="hidden lg:block h-[500px]">
+                  <div className="w-full h-full glass rounded-2xl border border-white/10 flex flex-col items-center justify-center p-10 relative overflow-hidden">
+                    <div className="w-40 h-40 bg-green-500 rounded-full blur-[80px] absolute opacity-20 animate-pulse-slow"></div>
+                    <div className="relative z-10 text-6xl mb-4 animate-float">🚀</div>
+                    <h2 className="relative z-10 text-3xl font-black text-white">Resultados en 8 Semanas</h2>
+                    <p className="relative z-10 text-gray-300 mb-8">Ahorro de 6-8 horas por semana</p>
+                    <div className="w-full mt-4 relative z-10 bg-black/50 p-4 rounded-xl border border-white/10">
+                      <StatsGraph />
+                      <div className="flex justify-between text-xs text-gray-400 mt-2">
+                        <span>Semana 1</span>
+                        <span className="text-green-400">Proyección</span>
+                        <span>Semana 8</span>
                       </div>
                     </div>
                   </div>
@@ -917,49 +918,17 @@
             </div>
           </section>
 
-          <section id="propuesta" className="py-24">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="objetivo" className="py-24 bg-gradient-to-b from-black to-gray-900/50">
+            <div className="max-w-4xl mx-auto px-4 text-center">
               <SectionTitle
                 eyebrow="Propuesta de valor"
-                title="La IA como ventaja educativa real"
-                desc="No se trata solo de usar herramientas; se trata de transformar práctica docente, reputación institucional y toma de decisiones."
+                title="La IA como ventaja competitiva real"
+                desc="No se trata solo de usar herramientas, sino de transformar práctica docente, posicionamiento institucional y toma de decisiones."
               />
 
-              <div className="glass rounded-3xl p-8 md:p-10 text-center">
-                <p className="text-lg md:text-xl text-gray-200 leading-relaxed">
-                  En <span className="font-black text-white">Edu IA 360</span> ayudamos a que tu escuela no solo adopte IA,
-                  sino que la convierta en una ventaja competitiva mediante formación aplicada, gemelos pedagógicos,
-                  acompañamiento a directivos y evidencias útiles para marketing, admisiones y mejora académica.
-                </p>
-
-                <div className="mt-8">
-                  <a
-                    href={getWhatsAppLink("Hola, me interesa convertir la IA en una ventaja competitiva para mi institución.")}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => trackClientify("whatsapp_click", { source: "propuesta" })}
-                    className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white font-bold transition"
-                  >
-                    <Icon name="arrow-right" size={18} />
-                    Quiero potenciar mi escuela
-                  </a>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="beneficios" className="py-24 border-t border-white/10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <SectionTitle
-                eyebrow="Beneficios"
-                title="Resultados visibles para tu comunidad educativa"
-                desc="Una implementación útil debe ahorrar tiempo, elevar la calidad académica y generar confianza."
-              />
-
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {BENEFITS.map((item) => (
-                  <div key={item.title} className="glass rounded-3xl p-7 hover:border-green-500/20 transition">
-                    <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-5">
-                      <Icon name={item.icon} className="text-green-400" size={26} />
-                    </div>
-                    <h3 className="text-xl font-black text-w
+              <div className="glass p-8 rounded-2xl border border-green-500/20 shadow-2xl">
+                <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-8">
+                  En <span className="font-black text-white">Edu IA 360</span> ayudamos a que tu colegio no solo use IA,
+                  sino que la convierta en una ventaja competitiva real. Implementamos proyectos de IA en el aula que se
+                  transforman en historias, evidencias y resultados visibles, mientras cada docente trabaja con su
+                  <span className="font
