@@ -3,24 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edu IA 360° | Transformación Educativa con Inteligencia Artificial</title>
-    <meta name="description" content="Transformación educativa con IA para docentes y escuelas en Querétaro. Ahorra tiempo, mejora clases y potencia tu marketing escolar con Edu IA 360°.">
-    <meta name="keywords" content="IA educación, cursos IA docentes, tecnología educativa, Querétaro, innovación escolar">
-    <meta name="author" content="Edu IA 360°">
+    <title>Edu IA 360° | Transformación Educativa</title>
     
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://eduia360.com/">
-    <meta property="og:title" content="Edu IA 360° | Transformación Educativa">
-    <meta property="og:description" content="IA integral aplicada para docentes y escuelas. Resultados en 8 semanas.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070&auto=format&fit=crop">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="Edu IA 360° | Transformación Educativa">
-    <meta property="twitter:description" content="IA integral aplicada para docentes y escuelas.">
-    <meta property="twitter:image" content="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070&auto=format&fit=crop">
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -51,45 +35,36 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Clientify Tracking (Movido al Head para carga temprana) -->
+    <!-- Clientify Tracking -->
     <script async defer src="https://analyticsplusdev.clientify.net/analytics_plus/pixel/jlGqiYa4Sko2WdQA"></script>
-
+    
     <style>
         html { scroll-behavior: smooth; }
         .glow-text { text-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
         .glow-text-gold { text-shadow: 0 0 20px rgba(234, 179, 8, 0.5); }
         canvas { pointer-events: none; }
         .perspective-1000 { perspective: 1000px; }
-        /* Scrollbar personalizada */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
-        /* Utilidad para ocultar scrollbar pero permitir scroll */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-black text-gray-100 font-sans overflow-x-hidden antialiased">
+<body class="bg-black text-gray-100 font-sans overflow-x-hidden">
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- UTILIDAD DE TRACKING CLIENTIFY ---
+        // ✅ TRACKING CLIENTIFY
         const trackConversion = (eventName, eventData = {}) => {
-            // Intenta llamar al método de tracking de Clientify si está disponible
             if (window.clientify && typeof window.clientify.track === 'function') {
                 window.clientify.track(eventName, eventData);
-            } else if (window.cf_track && typeof window.cf_track === 'function') {
-                // Fallback para posibles variaciones de nombre de función
-                window.cf_track(eventName, eventData);
             } else {
-                // Log para depuración si el pixel no expone API pública
                 console.log(`[Clientify Track] Event: ${eventName}`, eventData);
             }
         };
 
-        // --- COMPONENTE DE ICONOS PARA CDN ---
-        const Icon = ({ name, size = 24, className = "", ariaLabel }) => {
+        // ✅ COMPONENTE DE ICONOS
+        const Icon = ({ name, size = 24, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
                 const pascalName = name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
@@ -101,10 +76,9 @@
                     });
                 }
             }, [name, className, size]);
-            return <i ref={iconRef} data-lucide={name} className={className} aria-label={ariaLabel || name}></i>;
+            return <i ref={iconRef} data-lucide={name} className={className}></i>;
         };
 
-        // --- DATOS ---
         const NAV_LINKS = [
             { name: 'Inicio', href: '#inicio' },
             { name: 'Propuesta', href: '#objetivo' },
@@ -116,21 +90,12 @@
             { name: 'Casos', href: '#testimonios' },
         ];
 
-        // --- COMPONENTES AUXILIARES ---
-        
-        // Modal 1: Auditoría Ética
+        // ✅ MODAL AUDITORÍA ÉTICA (COMPLETAMENTE CORREGIDO)
         const EthicalAuditModal = ({ isOpen, onClose, getWALink }) => {
-            const modalRef = useRef(null);
+            const [step, setStep] = useState(0);
+            const [score, setScore] = useState(0);
+            const modalContentRef = useRef(null);
 
-            // Cerrar con tecla Escape
-            useEffect(() => {
-                const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-                if (isOpen) window.addEventListener('keydown', handleEsc);
-                return () => window.removeEventListener('keydown', handleEsc);
-            }, [isOpen, onClose]);
-
-            if (!isOpen) return null;
-            
             const questions = [
                 "¿Tu escuela tiene una política escrita y clara sobre el uso de IA?",
                 "¿Se ha informado a los padres sobre qué herramientas de IA utilizan los alumnos?",
@@ -143,23 +108,55 @@
                 "¿Se discute activamente sobre alucinaciones y errores de la IA en clase?",
                 "¿Existe un canal seguro para que alumnos/maestros reporten usos indebidos?"
             ];
-            const [step, setStep] = useState(0); 
-            const [score, setScore] = useState(0);
-            
-            const handleAnswer = (yes) => {
-                if (yes) setScore(s => s + 1);
-                setStep(s => s + 1);
-            };
-            
-            const handleComplete = () => {
-                trackConversion('Audit_Completed', { score: score });
+
+            // ✅ Resetear estado cuando se abre/cierra
+            useEffect(() => {
+                if (isOpen) {
+                    setStep(0);
+                    setScore(0);
+                }
+            }, [isOpen]);
+
+            // ✅ Cerrar con tecla Escape
+            useEffect(() => {
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape' && isOpen) {
+                        onClose();
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
+                return () => document.removeEventListener('keydown', handleEsc);
+            }, [isOpen, onClose]);
+
+            // ✅ Cerrar al hacer clic fuera
+            const handleBackdropClick = (e) => {
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
             };
 
+            const handleAnswer = (yes) => {
+                if (yes) setScore(prev => prev + 1);
+                setStep(prev => prev + 1);
+            };
+
+            if (!isOpen) return null;
+
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
-                    <div className="bg-gray-900 border border-blue-500/30 rounded-2xl w-full max-w-lg p-8 shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()} ref={modalRef}>
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10" aria-label="Cerrar modal"><Icon name="x"/></button>
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
+                    onClick={handleBackdropClick}
+                >
+                    <div 
+                        ref={modalContentRef}
+                        className="bg-gray-900 border border-blue-500/30 rounded-2xl w-full max-w-lg p-8 shadow-2xl relative overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10">
+                            <Icon name="x"/>
+                        </button>
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                        
                         {step === 0 && (
                             <div className="text-center space-y-6 animate-fade-in">
                                 <div className="w-20 h-20 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
@@ -167,11 +164,18 @@
                                 </div>
                                 <h3 className="text-2xl font-bold text-white">Auditoría de Ética IA</h3>
                                 <p className="text-gray-300">Evalúa si tu institución cumple con los protocolos de seguridad y ética necesarios para el uso de Inteligencia Artificial.</p>
-                                <button onClick={() => setStep(1)} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
+                                <button 
+                                    onClick={() => {
+                                        trackConversion('Audit_Started', { source: 'hero_button' });
+                                        setStep(1);
+                                    }} 
+                                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
+                                >
                                     Iniciar Auditoría
                                 </button>
                             </div>
                         )}
+                        
                         {step > 0 && step <= questions.length && (
                             <div className="space-y-8 animate-fade-in">
                                 <div className="flex justify-between text-xs text-blue-400 font-mono uppercase tracking-widest">
@@ -188,11 +192,15 @@
                                 </div>
                             </div>
                         )}
+                        
                         {step > questions.length && (
                             <div className="text-center space-y-6 animate-fade-in">
                                 <div className="w-24 h-24 mx-auto relative flex items-center justify-center">
                                     <span className="absolute text-3xl font-bold text-white">{score}/10</span>
-                                    <svg className="w-full h-full transform -rotate-90"><circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-800" /><circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className={`text-${score > 7 ? 'blue' : 'red'}-500`} strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * score) / 10} /></svg>
+                                    <svg className="w-full h-full transform -rotate-90">
+                                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-800" />
+                                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className={`text-${score > 7 ? 'blue' : 'red'}-500`} strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * score) / 10} />
+                                    </svg>
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-bold text-white mb-2">Nivel de Seguridad Ética</h3>
@@ -200,11 +208,15 @@
                                 </div>
                                 <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
                                     <p className="text-sm text-gray-300 mb-3">Solicita la revisión experta de tus protocolos.</p>
-                                    <a href={getWALink(`Hola, en mi auditoría ética obtuve ${score}/10. Solicito la Auditoría Completa.`)} 
-                                       onClick={handleComplete}
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold shadow-lg transition-all">
+                                    <a 
+                                        href={getWALink(`Hola, en mi auditoría ética obtuve ${score}/10. Solicito la Auditoría Completa.`)} 
+                                        onClick={() => {
+                                            trackConversion('Audit_Completed', { score: score });
+                                        }}
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold shadow-lg transition-all"
+                                    >
                                         <Icon name="message-square" size={20}/> Solicitar Auditoría Completa
                                     </a>
                                 </div>
@@ -216,18 +228,12 @@
             );
         };
 
-        // Modal 2: Diagnóstico IA
+        // ✅ MODAL DIAGNÓSTICO IA (COMPLETAMENTE CORREGIDO)
         const DiagnosticModal = ({ isOpen, onClose }) => {
-            const modalRef = useRef(null);
-            
-            useEffect(() => {
-                const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-                if (isOpen) window.addEventListener('keydown', handleEsc);
-                return () => window.removeEventListener('keydown', handleEsc);
-            }, [isOpen, onClose]);
+            const [step, setStep] = useState(0);
+            const [score, setScore] = useState(0);
+            const modalContentRef = useRef(null);
 
-            if (!isOpen) return null;
-            
             const questions = [
                 "¿Tu colegio tiene objetivos estratégicos definidos para IA este año?",
                 "¿Los docentes usan IA semanalmente para planificar clases?",
@@ -240,13 +246,38 @@
                 "¿Marketing usa IA para generar contenido de redes?",
                 "¿Cuentan con 'Gemelos Pedagógicos' para los docentes?"
             ];
-            const [step, setStep] = useState(0); 
-            const [score, setScore] = useState(0);
-            const handleAnswer = (yes) => {
-                if (yes) setScore(s => s + 1);
-                setStep(s => s + 1);
+
+            // ✅ Resetear estado cuando se abre/cierra
+            useEffect(() => {
+                if (isOpen) {
+                    setStep(0);
+                    setScore(0);
+                }
+            }, [isOpen]);
+
+            // ✅ Cerrar con tecla Escape
+            useEffect(() => {
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape' && isOpen) {
+                        onClose();
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
+                return () => document.removeEventListener('keydown', handleEsc);
+            }, [isOpen, onClose]);
+
+            // ✅ Cerrar al hacer clic fuera
+            const handleBackdropClick = (e) => {
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
             };
-            
+
+            const handleAnswer = (yes) => {
+                if (yes) setScore(prev => prev + 1);
+                setStep(prev => prev + 1);
+            };
+
             const getRecommendation = (finalScore) => {
                 if (finalScore <= 4) {
                     return { level: "Inicio Digital", color: "red", desc: "Tu institución está dando los primeros pasos.", courses: ["Fundamentos de IA", "Productividad"] };
@@ -256,17 +287,26 @@
                     return { level: "Escuela Innovadora", color: "green", desc: "Lideran el cambio.", courses: ["Líderes IA", "Gemelo Institucional"] };
                 }
             };
+
+            if (!isOpen) return null;
+
             const resultData = getRecommendation(score);
 
-            const handleConversion = () => {
-                trackConversion('Diagnostic_Completed', { score: score, level: resultData.level });
-            };
-
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
-                    <div className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()} ref={modalRef}>
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10" aria-label="Cerrar modal"><Icon name="x"/></button>
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
+                    onClick={handleBackdropClick}
+                >
+                    <div 
+                        ref={modalContentRef}
+                        className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10">
+                            <Icon name="x"/>
+                        </button>
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-teal-600"></div>
+                        
                         {step === 0 && (
                             <div className="text-center space-y-6 animate-fade-in my-auto">
                                 <div className="w-20 h-20 bg-green-900/30 rounded-full flex items-center justify-center mx-auto border border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
@@ -274,11 +314,18 @@
                                 </div>
                                 <h3 className="text-2xl font-bold text-white">Diagnóstico de Madurez IA</h3>
                                 <p className="text-gray-300">Descubre tu nivel de adopción tecnológica y obtén una <strong>Hoja de Ruta (Roadmap)</strong> personalizada.</p>
-                                <button onClick={() => setStep(1)} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
+                                <button 
+                                    onClick={() => {
+                                        trackConversion('Diagnostic_Started', { source: 'hero_button' });
+                                        setStep(1);
+                                    }} 
+                                    className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
+                                >
                                     Iniciar Diagnóstico
                                 </button>
                             </div>
                         )}
+                        
                         {step > 0 && step <= questions.length && (
                             <div className="space-y-8 animate-fade-in my-auto">
                                 <div className="flex justify-between text-xs text-green-400 font-mono uppercase tracking-widest">
@@ -295,11 +342,15 @@
                                 </div>
                             </div>
                         )}
+                        
                         {step > questions.length && (
                             <div className="text-center space-y-6 animate-fade-in overflow-y-auto pr-2 custom-scrollbar">
                                 <div className="flex items-center justify-center gap-4 mb-2">
                                     <div className="relative w-16 h-16 flex items-center justify-center">
-                                        <svg className="w-full h-full transform -rotate-90"><circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-800" /><circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className={`text-${resultData.color}-500`} strokeDasharray="175.9" strokeDashoffset={175.9 - (175.9 * score) / 10} /></svg>
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-800" />
+                                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className={`text-${resultData.color}-500`} strokeDasharray="175.9" strokeDashoffset={175.9 - (175.9 * score) / 10} />
+                                        </svg>
                                         <span className="absolute text-xl font-bold text-white">{score}/10</span>
                                     </div>
                                     <div className="text-left">
@@ -323,7 +374,11 @@
                                     </div>
                                     
                                     <button 
-                                        onClick={() => { onClose(); handleConversion(); window.location.href = '#testimonios'; }} 
+                                        onClick={() => {
+                                            trackConversion('Diagnostic_Completed', { score: score, level: resultData.level });
+                                            onClose();
+                                            window.location.href = '#testimonios';
+                                        }} 
                                         className="w-full py-3 bg-white text-green-900 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-lg"
                                     >
                                         <Icon name="play" size={18} fill="currentColor"/> Ver Demos y Temarios
@@ -346,7 +401,6 @@
             </div>
         );
 
-        // Canvas Optimizado con Pausa en Background
         const QuantumBackground = () => {
             const canvasRef = useRef(null);
             useEffect(() => {
@@ -361,7 +415,6 @@
                 window.addEventListener('resize', resize);
                 resize();
 
-                // Pausar animación si la pestaña no está visible
                 const handleVisibilityChange = () => {
                     isVisible = document.visibilityState === 'visible';
                     if (isVisible) animate();
@@ -540,20 +593,33 @@
             );
         };
 
-        // --- APP PRINCIPAL ---
+        // ✅ APP PRINCIPAL (ESTADO Y HANDLERS CORREGIDOS)
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-            const [isAuditOpen, setIsAuditOpen] = useState(false); 
-            const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false); 
+            const [isAuditOpen, setIsAuditOpen] = useState(false);
+            const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
             
             const getWALink = (text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`;
             
-            // Wrapper para enlaces de WhatsApp con Tracking
             const handleWhatsAppClick = (text, eventName) => {
                 trackConversion(eventName, { source: 'whatsapp_button', text_preview: text.substring(0, 20) });
                 window.open(getWALink(text), '_blank', 'noopener,noreferrer');
             };
 
+            // ✅ Handlers específicos para modales CON TRACKING
+            const openAudit = useCallback(() => {
+                trackConversion('Audit_Button_Click', { location: 'hero' });
+                setIsAuditOpen(true);
+            }, []);
+            
+            const openDiagnostic = useCallback(() => {
+                trackConversion('Diagnostic_Button_Click', { location: 'hero' });
+                setIsDiagnosticOpen(true);
+            }, []);
+            
+            const closeAudit = useCallback(() => setIsAuditOpen(false), []);
+            const closeDiagnostic = useCallback(() => setIsDiagnosticOpen(false), []);
+            
             const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
             const closeMenu = () => setIsMobileMenuOpen(false);
 
@@ -561,16 +627,15 @@
                 <div className="min-h-screen relative selection:bg-green-500 selection:text-white bg-black text-gray-100 font-sans overflow-x-hidden">
                     <QuantumBackground />
                     
-                    {/* Modal Auditoría Ética */}
+                    {/* ✅ Modales con props correctas */}
                     <EthicalAuditModal 
                         isOpen={isAuditOpen} 
-                        onClose={() => setIsAuditOpen(false)} 
+                        onClose={closeAudit} 
                         getWALink={getWALink}
                     />
-                    {/* Modal Diagnóstico IA */}
                     <DiagnosticModal
                         isOpen={isDiagnosticOpen}
-                        onClose={() => setIsDiagnosticOpen(false)}
+                        onClose={closeDiagnostic}
                     />
                     
                     {/* NAV */}
@@ -618,9 +683,21 @@
                                         <div className="flex flex-wrap gap-4 pt-2">
                                             <a href="#planes" className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:scale-105 flex gap-2 items-center">Ver Propuesta <Icon name="chevron-right"/></a>
                                             
-                                            <button onClick={() => setIsDiagnosticOpen(true)} className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10"><Icon name="sparkles"/> Diagnóstico IA</button>
+                                            {/* ✅ Botón Diagnóstico IA - AHORA FUNCIONA */}
+                                            <button 
+                                                onClick={openDiagnostic} 
+                                                className="px-8 py-4 bg-black/40 border border-green-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-green-500/10 cursor-pointer"
+                                            >
+                                                <Icon name="sparkles"/> Diagnóstico IA
+                                            </button>
                                             
-                                            <button onClick={() => setIsAuditOpen(true)} className="px-8 py-4 bg-black/40 border border-blue-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-blue-500/10"><Icon name="shield"/> Auditoría Ética</button>
+                                            {/* ✅ Botón Auditoría Ética - AHORA FUNCIONA */}
+                                            <button 
+                                                onClick={openAudit} 
+                                                className="px-8 py-4 bg-black/40 border border-blue-500/50 text-white rounded-lg font-semibold flex gap-2 items-center hover:bg-blue-500/10 cursor-pointer"
+                                            >
+                                                <Icon name="shield"/> Auditoría Ética
+                                            </button>
                                         </div>
                                     </div>
                                     <div className="hidden lg:block h-[500px] perspective-1000">
@@ -673,7 +750,7 @@
                         </div>
                     </section>
 
-                    {/* PLANES / BUYER PERSONAS */}
+                    {/* PLANES */}
                     <section id="planes" className="py-24 border-t border-white/5 bg-gradient-to-b from-black to-green-900/10">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="text-center mb-16">
@@ -681,7 +758,6 @@
                                 <p className="text-gray-400 mb-6 max-w-2xl mx-auto">Propuestas diseñadas específicamente para las necesidades de cada rol.</p>
                             </div>
                             <div className="grid md:grid-cols-2 gap-8">
-                                {/* Directores */}
                                 <Card3D className="h-full">
                                     <div className="bg-black/60 p-8 rounded-2xl h-full border border-yellow-500/30 flex flex-col hover:border-yellow-500/60 transition-all shadow-lg hover:shadow-yellow-500/10 relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-yellow-500/20"></div>
@@ -696,7 +772,6 @@
                                         </a>
                                     </div>
                                 </Card3D>
-                                {/* Docentes */}
                                 <Card3D className="h-full">
                                     <div className="bg-black/60 p-8 rounded-2xl h-full border border-green-500/30 flex flex-col hover:border-green-500/60 transition-all shadow-lg hover:shadow-green-500/10 relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-500/20"></div>
@@ -716,7 +791,7 @@
                         </div>
                     </section>
 
-                    {/* PORTFOLIO 5.0 */}
+                    {/* PORTFOLIO */}
                     <section id="portfolio" className="py-24 bg-black relative overflow-hidden border-t border-white/10">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -812,7 +887,7 @@
                         </Vortex>
                     </section>
 
-                    {/* FOOTER / CONTACTO */}
+                    {/* FOOTER */}
                     <footer id="contacto" className="bg-black py-12 border-t border-white/10 text-sm">
                         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8 text-gray-400">
                             <div className="col-span-2">
