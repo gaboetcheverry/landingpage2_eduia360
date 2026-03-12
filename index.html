@@ -37,19 +37,34 @@
     
     <!-- Prevención de errores de Clientify en Canvas o con AdBlockers -->
     <script>
-        window.addEventListener('error', function(e) {
-            if (e.message && e.message.includes('analytics library')) {
-                e.preventDefault(); // Silencia el error en consola
+        // Interceptar y silenciar los errores específicos de Clientify en la consola
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            const errorMsg = args.join(' ');
+            if (errorMsg.includes('Failed to load analytics library') || 
+                errorMsg.includes('generateFingerprint') || 
+                errorMsg.includes('Clientify')) {
+                return; // Silenciar error generado por el script interno de Clientify
             }
-        });
+            originalConsoleError.apply(console, args);
+        };
+
+        window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('analytics library') || e.message.includes('generateFingerprint'))) {
+                e.preventDefault(); 
+                e.stopPropagation();
+            }
+        }, true);
+        
         window.addEventListener('unhandledrejection', function(e) {
             if (e.reason && (e.reason.message || e.reason.toString()).includes('analytics library')) {
-                e.preventDefault(); // Silencia promesas rechazadas
+                e.preventDefault(); 
+                e.stopPropagation();
             }
-        });
+        }, true);
     </script>
 
-    <!--Clientify Tracking Begins-->
+    <!--Clientify Tracking Begins (Píxel General)-->
     <script src="https://analyticsplusdev.clientify.net/analytics_plus/pixel/git5fdWkEoTBxsSE"></script>
     <!--Clientify Tracking Ends-->
 
@@ -62,6 +77,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        /* Ajuste para que el formulario de Clientify se vea bien en fondo blanco */
+        .clientify-form-wrapper { min-h: 250px; }
     </style>
 </head>
 <body class="bg-black text-gray-100 font-sans overflow-x-hidden">
@@ -69,25 +86,14 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // ✅ TRACKING CLIENTIFY - FUNCIÓN GLOBAL (Segura, no rompe si Clientify tarda en cargar)
         const trackConversion = (eventName, eventData = {}) => {
             try {
                 if (typeof window.__clientifyTrack === 'function') {
-                    const sent = window.__clientifyTrack(eventName, eventData);
-                    if (sent) {
-                        console.log('[Clientify] Event tracked:', eventName, eventData);
-                    } else {
-                        console.log('[Clientify] Event queued:', eventName, eventData);
-                    }
-                } else {
-                    console.log('[Clientify] Helper no disponible (Es normal en la carga inicial):', eventName, eventData);
+                    window.__clientifyTrack(eventName, eventData);
                 }
-            } catch (error) {
-                console.error('[Clientify] Error tracking:', error);
-            }
+            } catch (error) {}
         };
 
-        // ✅ COMPONENTE DE ICONOS
         const Icon = ({ name, size = 24, className = "" }) => {
             const iconRef = useRef(null);
             useEffect(() => {
@@ -114,24 +120,29 @@
             { name: 'Casos', href: '#testimonios' },
         ];
 
+        // ✅ COMPONENTE: FORMULARIO CLIENTIFY
+        const ClientifyFormWidget = () => {
+            const containerRef = useRef(null);
+            useEffect(() => {
+                if (!containerRef.current) return;
+                containerRef.current.innerHTML = '';
+                const script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.src = 'https://api.clientify.net/web-marketing/superforms/script/279010.js';
+                script.async = true;
+                containerRef.current.appendChild(script);
+            }, []);
+            return <div ref={containerRef} className="clientify-form-wrapper w-full"></div>;
+        };
+
         // ✅ MODAL AUDITORÍA ÉTICA
         const EthicalAuditModal = ({ isOpen, onClose, getWALink }) => {
             const [step, setStep] = useState(0);
             const [score, setScore] = useState(0);
 
+            useEffect(() => { if (isOpen) { setStep(0); setScore(0); } }, [isOpen]);
             useEffect(() => {
-                if (isOpen) {
-                    setStep(0);
-                    setScore(0);
-                }
-            }, [isOpen]);
-
-            useEffect(() => {
-                const handleEsc = (e) => {
-                    if (e.key === 'Escape' && isOpen) {
-                        onClose();
-                    }
-                };
+                const handleEsc = (e) => { if (e.key === 'Escape' && isOpen) onClose(); };
                 document.addEventListener('keydown', handleEsc);
                 return () => document.removeEventListener('keydown', handleEsc);
             }, [isOpen, onClose]);
@@ -151,52 +162,28 @@
                 "¿Existe un canal seguro para que alumnos/maestros reporten usos indebidos?"
             ];
 
-            const handleAnswer = (yes) => {
-                if (yes) setScore(prev => prev + 1);
-                setStep(prev => prev + 1);
-            };
-
-            const handleStart = () => {
-                trackConversion('Audit_Started', { source: 'modal_button' });
-                setStep(1);
-            };
-
-            const handleComplete = () => {
-                trackConversion('Audit_Completed', { score: score, total: questions.length });
-            };
+            const handleAnswer = (yes) => { if (yes) setScore(prev => prev + 1); setStep(prev => prev + 1); };
+            const handleStart = () => { trackConversion('Audit_Started', { source: 'modal_button' }); setStep(1); };
 
             return (
-                <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
-                    onClick={onClose}
-                >
-                    <div 
-                        className="bg-gray-900 border border-blue-500/30 rounded-2xl w-full max-w-lg p-8 shadow-2xl relative overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10">
-                            <Icon name="x"/>
-                        </button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
+                    <div className="bg-gray-900 border border-blue-500/30 rounded-2xl w-full max-w-lg p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><Icon name="x"/></button>
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
                         
                         {step === 0 && (
-                            <div className="text-center space-y-6 animate-fade-in">
+                            <div className="text-center space-y-6 animate-fade-in my-auto">
                                 <div className="w-20 h-20 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
                                     <Icon name="shield" size={40} className="text-blue-400"/>
                                 </div>
                                 <h3 className="text-2xl font-bold text-white">Auditoría de Ética IA</h3>
                                 <p className="text-gray-300">Evalúa si tu institución cumple con los protocolos de seguridad y ética necesarios para el uso de Inteligencia Artificial.</p>
-                                <button 
-                                    onClick={handleStart}
-                                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
-                                >
-                                    Iniciar Auditoría
-                                </button>
+                                <button onClick={handleStart} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg">Iniciar Auditoría</button>
                             </div>
                         )}
                         
                         {step > 0 && step <= questions.length && (
-                            <div className="space-y-8 animate-fade-in">
+                            <div className="space-y-8 animate-fade-in my-auto">
                                 <div className="flex justify-between text-xs text-blue-400 font-mono uppercase tracking-widest">
                                     <span>Pregunta {step} de {questions.length}</span>
                                     <span>Progreso: {Math.round(((step-1)/questions.length)*100)}%</span>
@@ -211,9 +198,10 @@
                                 </div>
                             </div>
                         )}
-                        
+
+                        {/* Paso de Captura (Opcional en Auditoría, por ahora directo a WhatsApp) */}
                         {step > questions.length && (
-                            <div className="text-center space-y-6 animate-fade-in">
+                            <div className="text-center space-y-6 animate-fade-in overflow-y-auto pr-2 custom-scrollbar">
                                 <div className="w-24 h-24 mx-auto relative flex items-center justify-center">
                                     <span className="absolute text-3xl font-bold text-white">{score}/10</span>
                                     <svg className="w-full h-full transform -rotate-90">
@@ -227,17 +215,9 @@
                                 </div>
                                 <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
                                     <p className="text-sm text-gray-300 mb-3">Solicita la revisión experta de tus protocolos.</p>
-                                    <a 
-                                        href={getWALink(`Hola, en mi auditoría ética obtuve ${score}/10. Solicito la Auditoría Completa.`)} 
-                                        onClick={handleComplete}
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold shadow-lg transition-all"
-                                    >
-                                        <Icon name="message-square" size={20}/> Solicitar Auditoría Completa
-                                    </a>
+                                    <a href={getWALink(`Hola, en mi auditoría ética obtuve ${score}/10. Solicito la Auditoría Completa.`)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold shadow-lg transition-all"><Icon name="message-square" size={20}/> Solicitar Auditoría Completa</a>
                                 </div>
-                                <button onClick={onClose} className="w-full py-2 border border-gray-600 hover:bg-gray-800 text-white rounded-lg font-medium">Cerrar</button>
+                                <button onClick={onClose} className="text-xs text-gray-500 hover:text-white underline">Cerrar y volver al sitio</button>
                             </div>
                         )}
                     </div>
@@ -245,24 +225,14 @@
             );
         };
 
-        // ✅ MODAL DIAGNÓSTICO IA
+        // ✅ MODAL DIAGNÓSTICO IA (AHORA CON CAPTURA DE CLIENTIFY)
         const DiagnosticModal = ({ isOpen, onClose }) => {
             const [step, setStep] = useState(0);
             const [score, setScore] = useState(0);
 
+            useEffect(() => { if (isOpen) { setStep(0); setScore(0); } }, [isOpen]);
             useEffect(() => {
-                if (isOpen) {
-                    setStep(0);
-                    setScore(0);
-                }
-            }, [isOpen]);
-
-            useEffect(() => {
-                const handleEsc = (e) => {
-                    if (e.key === 'Escape' && isOpen) {
-                        onClose();
-                    }
-                };
+                const handleEsc = (e) => { if (e.key === 'Escape' && isOpen) onClose(); };
                 document.addEventListener('keydown', handleEsc);
                 return () => document.removeEventListener('keydown', handleEsc);
             }, [isOpen, onClose]);
@@ -282,46 +252,24 @@
                 "¿Cuentan con 'Gemelos Pedagógicos' para los docentes?"
             ];
 
-            const handleAnswer = (yes) => {
-                if (yes) setScore(prev => prev + 1);
-                setStep(prev => prev + 1);
-            };
-
-            const handleStart = () => {
-                trackConversion('Diagnostic_Started', { source: 'modal_button' });
-                setStep(1);
-            };
+            const handleAnswer = (yes) => { if (yes) setScore(prev => prev + 1); setStep(prev => prev + 1); };
+            const handleStart = () => { trackConversion('Diagnostic_Started', { source: 'modal_button' }); setStep(1); };
 
             const getRecommendation = (finalScore) => {
-                if (finalScore <= 4) {
-                    return { level: "Inicio Digital", color: "red", desc: "Tu institución está dando los primeros pasos.", courses: ["Fundamentos de IA", "Productividad"] };
-                } else if (finalScore <= 7) {
-                    return { level: "En Transición", color: "yellow", desc: "Tienen herramientas pero falta estrategia.", courses: ["Gemelos Pedagógicos", "Diseño Experiencias"] };
-                } else {
-                    return { level: "Escuela Innovadora", color: "green", desc: "Lideran el cambio.", courses: ["Líderes IA", "Gemelo Institucional"] };
-                }
+                if (finalScore <= 4) return { level: "Inicio Digital", color: "red", desc: "Tu institución está dando los primeros pasos.", courses: ["Fundamentos de IA", "Productividad"] };
+                else if (finalScore <= 7) return { level: "En Transición", color: "yellow", desc: "Tienen herramientas pero falta estrategia.", courses: ["Gemelos Pedagógicos", "Diseño Experiencias"] };
+                else return { level: "Escuela Innovadora", color: "green", desc: "Lideran el cambio.", courses: ["Líderes IA", "Gemelo Institucional"] };
             };
 
             const resultData = getRecommendation(score);
 
-            const handleComplete = () => {
-                trackConversion('Diagnostic_Completed', { score: score, level: resultData.level });
-            };
-
             return (
-                <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
-                    onClick={onClose}
-                >
-                    <div 
-                        className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10">
-                            <Icon name="x"/>
-                        </button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
+                    <div className="bg-gray-900 border border-green-500/30 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"><Icon name="x"/></button>
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-teal-600"></div>
                         
+                        {/* PANTALLA INICIAL */}
                         {step === 0 && (
                             <div className="text-center space-y-6 animate-fade-in my-auto">
                                 <div className="w-20 h-20 bg-green-900/30 rounded-full flex items-center justify-center mx-auto border border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
@@ -329,15 +277,11 @@
                                 </div>
                                 <h3 className="text-2xl font-bold text-white">Diagnóstico de Madurez IA</h3>
                                 <p className="text-gray-300">Descubre tu nivel de adopción tecnológica y obtén una <strong>Hoja de Ruta (Roadmap)</strong> personalizada.</p>
-                                <button 
-                                    onClick={handleStart}
-                                    className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
-                                >
-                                    Iniciar Diagnóstico
-                                </button>
+                                <button onClick={handleStart} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg">Iniciar Diagnóstico</button>
                             </div>
                         )}
                         
+                        {/* CUESTIONARIO */}
                         {step > 0 && step <= questions.length && (
                             <div className="space-y-8 animate-fade-in my-auto">
                                 <div className="flex justify-between text-xs text-green-400 font-mono uppercase tracking-widest">
@@ -354,8 +298,32 @@
                                 </div>
                             </div>
                         )}
+
+                        {/* PASO INTERMEDIO: FORMULARIO CLIENTIFY */}
+                        {step === questions.length + 1 && (
+                            <div className="text-center space-y-5 animate-fade-in overflow-y-auto pr-2 custom-scrollbar my-auto">
+                                <div className="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto border border-blue-500/50">
+                                    <Icon name="mail" size={32} className="text-blue-400"/>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white">¡Tu diagnóstico está listo!</h3>
+                                <p className="text-gray-300 text-sm max-w-md mx-auto">Completa tus datos para enviarte una copia a tu correo y desbloquear inmediatamente tu nivel de madurez y Hoja de Ruta.</p>
+                                
+                                {/* CONTENEDOR DEL FORMULARIO */}
+                                <div className="bg-white rounded-xl p-4 shadow-lg w-full max-w-md mx-auto text-black">
+                                    <ClientifyFormWidget />
+                                </div>
+
+                                <div className="pt-4 border-t border-white/10 max-w-md mx-auto">
+                                    <p className="text-xs text-gray-400 mb-3">¿Ya enviaste tus datos?</p>
+                                    <button onClick={() => setStep(prev => prev + 1)} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+                                        Ver mis resultados <Icon name="arrow-right" size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         
-                        {step > questions.length && (
+                        {/* RESULTADOS FINALES */}
+                        {step > questions.length + 1 && (
                             <div className="text-center space-y-6 animate-fade-in overflow-y-auto pr-2 custom-scrollbar">
                                 <div className="flex items-center justify-center gap-4 mb-2">
                                     <div className="relative w-16 h-16 flex items-center justify-center">
@@ -374,27 +342,13 @@
                                 <p className="text-sm text-gray-300 border-b border-white/10 pb-4">{resultData.desc}</p>
                                 
                                 <div className="bg-gradient-to-br from-green-900/20 to-teal-900/20 rounded-xl p-5 border border-green-500/20 text-left">
-                                    <h4 className="flex items-center gap-2 text-teal-400 font-bold mb-3 uppercase text-xs tracking-wider">
-                                        <Icon name="book-open" size={16}/> Cursos Recomendados
-                                    </h4>
+                                    <h4 className="flex items-center gap-2 text-teal-400 font-bold mb-3 uppercase text-xs tracking-wider"><Icon name="book-open" size={16}/> Cursos Recomendados</h4>
                                     <div className="flex flex-wrap gap-2 mb-4">
                                         {resultData.courses.map((course, i) => (
-                                            <span key={i} className="px-3 py-1 bg-teal-500/10 border border-teal-500/30 text-teal-200 rounded-full text-xs font-medium">
-                                                {course}
-                                            </span>
+                                            <span key={i} className="px-3 py-1 bg-teal-500/10 border border-teal-500/30 text-teal-200 rounded-full text-xs font-medium">{course}</span>
                                         ))}
                                     </div>
-                                    
-                                    <button 
-                                        onClick={() => {
-                                            handleComplete();
-                                            onClose();
-                                            window.location.href = '#testimonios';
-                                        }} 
-                                        className="w-full py-3 bg-white text-green-900 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-lg"
-                                    >
-                                        <Icon name="play" size={18} fill="currentColor"/> Ver Demos y Temarios
-                                    </button>
+                                    <button onClick={() => { onClose(); window.location.href = '#testimonios'; }} className="w-full py-3 bg-white text-green-900 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-lg"><Icon name="play" size={18} fill="currentColor"/> Ver Demos y Temarios</button>
                                 </div>
                                 <button onClick={onClose} className="text-xs text-gray-500 hover:text-white underline">Cerrar y volver al sitio</button>
                             </div>
@@ -407,8 +361,7 @@
         const BackToTop = () => (
             <div className="flex justify-end mt-8">
                 <a href="#inicio" className="group flex items-center gap-2 text-sm text-green-400 hover:text-white transition-all opacity-70 hover:opacity-100">
-                    <span className="group-hover:-translate-y-1 transition-transform duration-300"><Icon name="arrow-up" size={16} /></span> 
-                    Volver al inicio
+                    <span className="group-hover:-translate-y-1 transition-transform duration-300"><Icon name="arrow-up" size={16} /></span> Volver al inicio
                 </a>
             </div>
         );
@@ -422,15 +375,10 @@
                 let animationFrameId;
                 let particles = [];
                 let isVisible = true;
-
                 const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
                 window.addEventListener('resize', resize);
                 resize();
-
-                const handleVisibilityChange = () => {
-                    isVisible = document.visibilityState === 'visible';
-                    if (isVisible) animate();
-                };
+                const handleVisibilityChange = () => { isVisible = document.visibilityState === 'visible'; if (isVisible) animate(); };
                 document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 class Particle {
@@ -458,11 +406,7 @@
                     animationFrameId = requestAnimationFrame(animate);
                 };
                 animate();
-                return () => { 
-                    window.removeEventListener('resize', resize); 
-                    document.removeEventListener('visibilitychange', handleVisibilityChange);
-                    cancelAnimationFrame(animationFrameId); 
-                };
+                return () => { window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', handleVisibilityChange); cancelAnimationFrame(animationFrameId); };
             }, []);
             return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full -z-10 pointer-events-none" />;
         };
@@ -478,17 +422,11 @@
                 let animationFrameId;
                 let particles = [];
                 let isVisible = true;
-
                 const resize = () => { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; };
                 resize();
                 window.addEventListener('resize', resize);
-
-                const handleVisibilityChange = () => {
-                    isVisible = document.visibilityState === 'visible';
-                    if (isVisible) animate();
-                };
+                const handleVisibilityChange = () => { isVisible = document.visibilityState === 'visible'; if (isVisible) animate(); };
                 document.addEventListener('visibilitychange', handleVisibilityChange);
-
                 const center = { x: canvas.width / 2, y: canvas.height / 2 };
                 class Particle {
                     constructor() { this.reset(); }
@@ -505,11 +443,7 @@
                     animationFrameId = requestAnimationFrame(animate); 
                 };
                 animate();
-                return () => { 
-                    window.removeEventListener('resize', resize); 
-                    document.removeEventListener('visibilitychange', handleVisibilityChange);
-                    cancelAnimationFrame(animationFrameId); 
-                };
+                return () => { window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', handleVisibilityChange); cancelAnimationFrame(animationFrameId); };
             }, [particleCount]);
             return ( <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${containerClassName || ''}`}> <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" /> <div className={`relative z-10 ${className || ''}`}>{children}</div> </div> );
         };
@@ -605,7 +539,6 @@
             );
         };
 
-        // ✅ APP PRINCIPAL
         const App = () => {
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [isAuditOpen, setIsAuditOpen] = useState(false);
@@ -614,23 +547,13 @@
             const getWALink = useCallback((text) => `https://wa.me/524611824875?text=${encodeURIComponent(text)}`, []);
             
             const handleWhatsAppClick = useCallback((text, eventName) => {
-                trackConversion(eventName, { source: 'whatsapp_button', text_preview: text.substring(0, 20) });
                 window.open(getWALink(text), '_blank', 'noopener,noreferrer');
             }, [getWALink]);
 
-            const openAudit = useCallback(() => {
-                trackConversion('Audit_Button_Click', { location: 'hero' });
-                setIsAuditOpen(true);
-            }, []);
-            
-            const openDiagnostic = useCallback(() => {
-                trackConversion('Diagnostic_Button_Click', { location: 'hero' });
-                setIsDiagnosticOpen(true);
-            }, []);
-            
+            const openAudit = useCallback(() => setIsAuditOpen(true), []);
+            const openDiagnostic = useCallback(() => setIsDiagnosticOpen(true), []);
             const closeAudit = useCallback(() => setIsAuditOpen(false), []);
             const closeDiagnostic = useCallback(() => setIsDiagnosticOpen(false), []);
-            
             const toggleMenu = useCallback(() => setIsMobileMenuOpen(prev => !prev), []);
             const closeMenu = useCallback(() => setIsMobileMenuOpen(false), []);
 
@@ -641,7 +564,6 @@
                     <EthicalAuditModal isOpen={isAuditOpen} onClose={closeAudit} getWALink={getWALink} />
                     <DiagnosticModal isOpen={isDiagnosticOpen} onClose={closeDiagnostic} />
                     
-                    {/* NAV */}
                     <nav className="fixed top-0 w-full z-40 border-b border-white/5 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex items-center justify-between h-20">
@@ -670,7 +592,6 @@
                         )}
                     </nav>
 
-                    {/* HERO */}
                     <section id="inicio" className="relative min-h-screen lg:h-screen overflow-hidden pt-24 pb-12 lg:py-0 flex items-center">
                         <Vortex className="flex items-center w-full h-full px-0" containerClassName="bg-black/20" particleCount={300}>
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full flex items-center">
@@ -697,7 +618,6 @@
                         </Vortex>
                     </section>
 
-                    {/* PROPUESTA DE VALOR */}
                     <section id="objetivo" className="py-24 bg-gradient-to-b from-black to-gray-900/50">
                         <div className="max-w-4xl mx-auto px-4 text-center">
                             <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestra <span className="text-green-400">Propuesta de Valor</span></h2>
@@ -713,7 +633,6 @@
                         </div>
                     </section>
 
-                    {/* BENEFICIOS */}
                     <section id="beneficios" className="py-20 border-t border-white/5">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Beneficios <span className="text-green-400">Clave</span></h2>
@@ -739,7 +658,6 @@
                         </div>
                     </section>
 
-                    {/* PLANES */}
                     <section id="planes" className="py-24 border-t border-white/5 bg-gradient-to-b from-black to-green-900/10">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="text-center mb-16">
@@ -780,7 +698,6 @@
                         </div>
                     </section>
 
-                    {/* PORTFOLIO */}
                     <section id="portfolio" className="py-24 bg-black relative overflow-hidden border-t border-white/10">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -804,7 +721,6 @@
                         </div>
                     </section>
 
-                    {/* RECURSOS */}
                     <section id="recursos" className="py-20 bg-gradient-to-b from-black to-gray-900/30">
                         <div className="max-w-7xl mx-auto px-4 text-center">
                             <h2 className="text-4xl font-bold mb-4">Recursos <span className="text-green-400">Valor</span></h2>
@@ -825,7 +741,6 @@
                         </div>
                     </section>
 
-                    {/* HERRAMIENTAS */}
                     <section id="herramientas" className="py-20 bg-black/30 relative">
                         <div className="max-w-7xl mx-auto px-4">
                             <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="text-green-400">Herramientas</span> Exclusivas</h2></div>
@@ -851,7 +766,6 @@
                         <BackToTop/>
                     </section>
 
-                    {/* TESTIMONIOS */}
                     <section id="testimonios" className="py-20">
                         <div className="max-w-7xl mx-auto px-4">
                             <h2 className="text-3xl font-bold text-center mb-4">Casos y <span className="text-green-400">Resultados</span></h2>
@@ -866,7 +780,6 @@
                         </div>
                     </section>
 
-                    {/* CTA FINAL */}
                     <section className="relative h-[500px]">
                         <Vortex className="flex items-center flex-col justify-center px-4 w-full h-full" containerClassName="bg-black">
                             <h2 className="text-white text-4xl font-bold text-center">¿Listo para transformar tu escuela?</h2>
@@ -876,7 +789,6 @@
                         </Vortex>
                     </section>
 
-                    {/* FOOTER */}
                     <footer id="contacto" className="bg-black py-12 border-t border-white/10 text-sm">
                         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8 text-gray-400">
                             <div className="col-span-2">
