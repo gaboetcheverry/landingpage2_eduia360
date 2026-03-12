@@ -78,7 +78,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
         /* Ajuste para que el formulario de Clientify se vea bien en fondo blanco */
-        .clientify-form-wrapper { min-h: 250px; }
+        .clientify-form-wrapper { min-h: 250px; width: 100%; display: flex; justify-content: center; }
     </style>
 </head>
 <body class="bg-black text-gray-100 font-sans overflow-x-hidden">
@@ -120,19 +120,20 @@
             { name: 'Casos', href: '#testimonios' },
         ];
 
-        // ✅ COMPONENTE: FORMULARIO CLIENTIFY
+        // ✅ COMPONENTE: FORMULARIO CLIENTIFY (Modificado para usar iframe)
         const ClientifyFormWidget = () => {
-            const containerRef = useRef(null);
-            useEffect(() => {
-                if (!containerRef.current) return;
-                containerRef.current.innerHTML = '';
-                const script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://api.clientify.net/web-marketing/superforms/script/279010.js';
-                script.async = true;
-                containerRef.current.appendChild(script);
-            }, []);
-            return <div ref={containerRef} className="clientify-form-wrapper w-full"></div>;
+            return (
+                <div className="clientify-form-wrapper w-full">
+                    <iframe 
+                        src="https://apps.clientify.net/forms/simpleembed/#/forms/embedform/279010/130294" 
+                        width="100%" 
+                        height="380" 
+                        frameBorder="0"
+                        style={{ border: 'none', overflow: 'hidden', background: 'transparent' }}
+                        title="Formulario Clientify"
+                    ></iframe>
+                </div>
+            );
         };
 
         // ✅ MODAL AUDITORÍA ÉTICA
